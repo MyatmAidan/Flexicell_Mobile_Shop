@@ -24,7 +24,7 @@
                 </a>
             </li>
             <li class="sidebar-item">
-                <a class="sidebar-link" href="#" aria-expanded="false">
+                <a class="sidebar-link" href="{{ route('admin.direct_sale.index') }}" aria-expanded="false">
                     <span>
                         <iconify-icon icon="solar:shop-2-bold-duotone" class="fs-6"></iconify-icon>
                     </span>
@@ -52,7 +52,7 @@
                 </a>
             </li>
             <li class="sidebar-item">
-                <a class="sidebar-link" href="#" aria-expanded="false">    
+                <a class="sidebar-link" href="{{ route('admin.product.index') }}" aria-expanded="false">    
                     <span>
                         <iconify-icon icon="solar:box-bold-duotone" class="fs-6"></iconify-icon>
                     </span>
@@ -60,7 +60,7 @@
                 </a>
             </li>
             <li class="sidebar-item">
-                <a class="sidebar-link" href="#" aria-expanded="false">
+                <a class="sidebar-link" href="{{ route('admin.device.index') }}" aria-expanded="false">
                     <span>
                         <iconify-icon icon="solar:widget-4-bold-duotone" class="fs-6"></iconify-icon>
                     </span>
@@ -88,7 +88,7 @@
                 <span class="hide-menu">User Management</span>
             </li>
             <li class="sidebar-item">
-                <a class="sidebar-link" href="#" aria-expanded="false">
+                <a class="sidebar-link" href="{{ route('admin.user.index') }}" aria-expanded="false">
                     <span>
                         <iconify-icon icon="solar:user-bold-duotone" class="fs-6"></iconify-icon>
                     </span>

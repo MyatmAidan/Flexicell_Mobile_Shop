@@ -1,11 +1,11 @@
 @extends('layouts.app')
 
 @section('meta')
-    <meta name="description" content="Brand List">
-    <meta name="keywords" content="Brand, List, Flexicell">
+    <meta name="description" content="Users List">
+    <meta name="keywords" content="Users, List, Flexicell">
 @endsection
 
-@section('title', 'Brand List')
+@section('title', 'Users List')
 
 @section('content')
     <div class="row">
@@ -14,10 +14,10 @@
                 <div class="card-body">
                     <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap">
                         <h1 class="card-title h5 d-flex align-items-center gap-2 mb-4">
-                            Brand Lists
+                            Users Lists
                         </h1>
-                        <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#createBrandModal">
-                            <i class="fas fa-plus"></i> Create New Brand
+                        <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#createUserModal">
+                            <i class="fas fa-plus"></i> Create New User
                         </button>
                     </div>
                     <div class="">
@@ -26,9 +26,11 @@
                                 <tr>
                                     <th></th>
                                     <th>#</th>
-                                    <th>Logo</th>
                                     <th>Name</th>
-                                    <th>Created at</th>
+                                    <th>Email</th>
+                                    <th>Phone</th>
+                                    <th>Address</th>
+                                    <th>Role</th>
                                     <th>Action</th>
                                 </tr>
                             </thead>
@@ -40,34 +42,50 @@
     </div>
 
     <!-- Create Brand Modal -->
-<div class="modal fade" id="createBrandModal" tabindex="-1" aria-hidden="true">
+<div class="modal fade" id="createUserModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-md modal-dialog-centered">
         <div class="modal-content">
-            <form id="createBrandForm">
+            <form id="createUserForm">
                 @csrf
 
                 <div class="modal-header">
-                    <h5 class="modal-title">Create Brand</h5>
+                    <h5 class="modal-title">Create User</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
 
                 <div class="modal-body">
                     <div class="mb-3">
-                        <label class="form-label">Brand Name</label>
-                        <input type="text" name="brand_name" class="form-control" required>
+                        <label class="form-label">Name</label>
+                        <input type="text" name="name" class="form-control" required>
                     </div>
 
                     <div class="mb-3">
-                        <label class="form-label">Logo</label>
-                        <input type="file" name="logo" class="form-control" id="create_logo" accept="image/*">
+                        <label class="form-label">Email</label>
+                        <input type="email" name="email" class="form-control" required>
                     </div>
 
-                    <div class="mb-3 text-center">
-                        <img id="logoPreview"
-                            src=""
-                            alt="Logo Preview"
-                            class="img-fluid rounded border"
-                            style="max-height: 150px; display: none;">
+                    <div class="mb-3">
+                        <label class="form-label">Password</label>
+                        <input type="password" class="form-control" name="password" required>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Role</label>
+                        <select name="role" class="form-control" required>
+                            <option value="">Select Role</option>
+                            <option value="user">User</option>
+                            <option value="admin">Admin</option>
+                        </select>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Phone</label>
+                        <input type="text" name="phone" class="form-control" required>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Address</label>
+                        <input type="text" name="address" class="form-control" required>
                     </div>
                 </div>
 
@@ -85,36 +103,67 @@
 </div>
 
 <!-- Edit Brand Modal -->
-<form method="POST" id="editForm" action="{{ route('admin.brand.update', ':id') }}" enctype="multipart/form-data">
-        @csrf
-        @method('PUT')
-        <div class="modal fade" id="editModal" tabindex="-1" aria-labelledby="editModalLabel" aria-hidden="true">
-            <div class="modal-dialog modal-dialog-centered">
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <h1 class="modal-title fs-5" id="editModalLabel">Edit Brand</h1>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                    </div>
-                    <div class="modal-body">
-                        <div class="form-group">
-                            <label for="edit_name">Brand Name</label>
-                            <input type="text" class="form-control" id="edit_name" name="brand_name" placeholder="Enter brand name" />
-                        </div>
-                        <div class="form-group mt-3">
-                            <label for="edit_logo">Logo</label>
-                            <input type="file" class="form-control" id="edit_logo" name="logo" accept="image/*" />
-                            <img src="" alt="Current Logo" id="edit_brand_logo" class="mt-2 d-none" style="max-width: 100px; max-height: 100px;">
-                        </div>
-                        <input type="hidden" id="edit_id">
-                    </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                        <button type="submit" class="btn btn-primary">Save</button>
-                    </div>
+<form method="POST" id="editForm" action="{{ route('admin.user.update', ':id') }}">
+    @csrf
+    @method('PUT')
+
+    <div class="modal fade" id="editModal" tabindex="-1" aria-labelledby="editModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+
+                <div class="modal-header">
+                    <h1 class="modal-title fs-5" id="editModalLabel">Edit User</h1>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
+
+                <div class="modal-body">
+
+                    <div class="mb-3">
+                        <label class="form-label">Name</label>
+                        <input type="text" class="form-control" id="edit_name" name="name">
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Email</label>
+                        <input type="email" class="form-control" id="edit_email" name="email">
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Password</label>
+                        <input type="password" class="form-control" id="edit_password" name="password">
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Phone</label>
+                        <input type="text" class="form-control" id="edit_phone" name="phone">
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Address</label>
+                        <input type="text" class="form-control" id="edit_address" name="address">
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Role</label>
+                        <select class="form-control" id="edit_role" name="role">
+                            <option value="user">User</option>
+                            <option value="admin">Admin</option>
+                        </select>
+                    </div>
+
+                    <input type="hidden" id="edit_id" name="id">
+
+                </div>
+
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="submit" class="btn btn-primary">Update User</button>
+                </div>
+
             </div>
         </div>
-    </form>
+    </div>
+</form>
 @endsection
 
 
@@ -126,7 +175,7 @@
             let datatable = $('#datatable').DataTable({
                 processing: true,
                 serverSide: true,
-                ajax: "{{ route('admin.brand.getList') }}",
+                ajax: "{{ route('admin.user.getList') }}",
                 columns: [
                     { 
                         data: 'plus-icon',
@@ -141,15 +190,21 @@
                         searchable: false 
                     },
                     { 
-                        data: 'logo', 
-                        name: 'logo',
+                        data: 'name', 
+                        name: 'name',
                     },
                     { 
-                        data: 'brand_name', 
-                        name: 'brand_name'
+                        data: 'email', 
+                        name: 'email'
                     },
-                    {   data: 'created_at', 
-                        name: 'created_at',
+                    {   data: 'phone', 
+                        name: 'phone',
+                    },
+                    {   data: 'address', 
+                        name: 'address',
+                    },
+                    {   data: 'role', 
+                        name: 'role',
                     },
                     { 
                         data: 'action', 
@@ -161,51 +216,29 @@
                 order: [[5, 'desc']],
             });
 
-            // Create brand logo preview
-            $(document).on('change', '#create_logo', function () {
-                const file = this.files[0];
-                const preview = $('#logoPreview');
-
-                if (!file) {
-                    preview.hide().attr('src', '');
-                    return;
-                }
-
-                const reader = new FileReader();
-                reader.onload = function (e) {
-                    preview.attr('src', e.target.result).show();
-                };
-                reader.readAsDataURL(file);
-            });
-
-            $('#createBrandModal').on('hidden.bs.modal', function () {
-                $('#createBrandForm')[0].reset();
-                $('#logoPreview').hide().attr('src', '');
-            });
-
-            // Create Brand
-            $('#createBrandForm').submit(function (e) {
+            // Create User
+            $('#createUserForm').submit(function (e) {
                 e.preventDefault();
 
                 let formData = new FormData(this);
                 // console.log(formData);
-
+                
                 $.ajax({
-                    url: "{{ route('admin.brand.store') }}",
+                    url: "{{ route('admin.user.store') }}",
                     method: "POST",
                     data: formData,
                     contentType: false,
                     processData: false,
                     success: function (res) {
-                        $('#createBrandModal').modal('hide');
-                        $('#createBrandForm')[0].reset();
+                        $('#createUserModal').modal('hide');
+                        $('#createUserForm')[0].reset();
 
                         Swal.fire({
                             toast: true,
                             position: 'top-end',
                             icon: 'success',
                             title: 'Success',
-                            text: res.message ?? 'Brand created successfully',
+                            text: res.message ?? 'User created successfully',
                             timer: 2000,
                             timerProgressBar: true,
                             showConfirmButton: false
@@ -223,51 +256,27 @@
                 });
             });
 
-            // Edit brand logo preview
-            $(document).on('change', '#edit_logo', function () {
-                const file = this.files[0];
-                const preview = $('#edit_brand_logo');
-
-                if (!file) {
-                    preview.addClass('d-none').attr('src', '');
-                    return;
-                }
-
-                const reader = new FileReader();
-                reader.onload = function (e) {
-                    preview
-                        .attr('src', e.target.result)
-                        .removeClass('d-none');
-                };
-                reader.readAsDataURL(file);
-            });
-
-            $('#editModal').on('hidden.bs.modal', function () {
-                $('#editForm')[0].reset();
-                $('#edit_brand_logo').addClass('d-none').attr('src', '');
-                $('#edit_id').val('');
-            });
-
-            //edit brand
-            let updateUrlTemplate = "{{ route('admin.brand.update', ':id') }}";
-            $(document).on('click', '.edit-brand-btn', function (e) {
+            //edit user
+            let updateUrlTemplate = "{{ route('admin.user.update', ':id') }}";
+            $(document).on('click', '.edit-user-btn', function (e) {
                 e.preventDefault();
                 let id   = $(this).data('id');
                 let name = $(this).data('name');
-                let logo = $(this).data('logo');
+                let email = $(this).data('email');
+                let phone = $(this).data('phone');
+                let address = $(this).data('address');
+                let role = $(this).data('role');
                 
-
                 // populate modal fields
                 $('#edit_id').val(id);
                 $('#edit_name').val(name);
-                $('#edit_logo_name').val($(this).data('logo'));
+                $('#edit_email').val(email);
+                $('#edit_phone').val(phone);
+                $('#edit_address').val(address);
+                $('#edit_role').val(role);
 
-                if (logo) {
-                    $('#edit_brand_logo').attr('src', logo).removeClass('d-none');
-                } else {
-                    $('#edit_brand_logo').addClass('d-none');
-                }
-
+                
+               
                 $('#editModal').modal('show');
             });
 
@@ -297,7 +306,7 @@
                             position: 'top-end',
                             icon: 'success',
                             title: 'Success',
-                            text: res.message ?? 'Brand updated successfully',
+                            text: res.message ?? 'User updated successfully',
                             timer: 2000,
                             timerProgressBar: true,
                             showConfirmButton: false
@@ -337,7 +346,7 @@
                 }).then((result) => {
                     if (!result.isConfirmed) return;
 
-                    let destroyUrl = "{{ route('admin.brand.destroy', '__id__') }}";
+                    let destroyUrl = "{{ route('admin.user.destroy', '__id__') }}";
                     destroyUrl = destroyUrl.replace('__id__', brand_id);
 
                     $.ajax({
@@ -355,7 +364,7 @@
                                     icon: 'success',
                                     title: 'Success',
                                     text: response.message ||
-                                        'Brand deleted successfully.',
+                                        'user deleted successfully.',
                                     timer: 2000,
                                     showConfirmButton: false,
                                     timerProgressBar: true,

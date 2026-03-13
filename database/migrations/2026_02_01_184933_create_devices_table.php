@@ -21,6 +21,9 @@ return new class extends Migration
             $table->integer('battery_percentage');
             $table->string('condition_grade');
             $table->string('status')->default('available');
+            $table->decimal('purchase_price', 10, 2)->nullable();
+            $table->decimal('selling_price', 10, 2)->nullable();
+            $table->json('image')->nullable();
             $table->timestamps();
         });
     }

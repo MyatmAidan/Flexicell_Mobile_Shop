@@ -8,6 +8,10 @@ class Product extends Model
 {
     protected $guarded = ['id'];
 
+    protected $casts = [
+        'image' => 'array',
+    ];
+
     public function phoneModel()
     {
         return $this->belongsTo(Phone_model::class);

@@ -15,7 +15,6 @@ return new class extends Migration
             $table->id();
             $table->foreignId('phone_model_id')->constrained()->cascadeOnDelete();
             $table->string('product_type'); // new / second hand
-            $table->decimal('selling_price', 10, 2);
             $table->integer('warranty_month')->nullable();
             $table->json('image')->nullable();
             $table->text('description')->nullable();

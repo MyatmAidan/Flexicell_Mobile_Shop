@@ -30,4 +30,9 @@ class Order extends Model
     {
         return $this->hasOne(Installment::class);
     }
+
+    public function devices()
+    {
+        return $this->hasMany(Device::class);
+    }
 }

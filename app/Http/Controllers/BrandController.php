@@ -3,7 +3,6 @@
 namespace App\Http\Controllers;
 
 use App\Models\Brands;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Yajra\DataTables\Facades\DataTables;
 use App\Http\Requests\BrandCreateRequest;
@@ -24,11 +23,6 @@ class BrandController extends Controller
 
     public function store(BrandCreateRequest $request)
     {
-        $request->validate([
-            'brand_name' => 'required|string|max:255',
-            'logo' => 'nullable|image',
-        ]);
-
         Brands::create([
             'brand_name' => $request->brand_name,
             'logo' => $request->file('logo')?->store('brands', 'public'),
@@ -96,7 +90,7 @@ class BrandController extends Controller
                 if ($brand->logo) {
                     Storage::disk('public')->delete($brand->logo);
                 }
-                
+
                 // Store the new logo and save the path
                 $data['logo'] = $request->file('logo')->store('brands', 'public');
             }
@@ -150,5 +144,4 @@ class BrandController extends Controller
 
         return $filePath;
     }
-
 }

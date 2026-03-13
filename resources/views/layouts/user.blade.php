@@ -32,9 +32,9 @@
         <div id="top-header">
             <div class="container">
                 <ul class="header-links pull-left">
-                    <li><a href="#"><i class="fa fa-phone"></i> 09758729263</a></li>
-                    <li><a href="#"><i class="fa fa-envelope-o"></i> myintmolinn2021@gmail.com</a></li>
-                    <li><a href="#"><i class="fa fa-map-marker"></i> Heho</a></li>
+                    <li><a href="#"><i class="fa fa-phone"></i> 09978844466</a></li>
+                    <li><a href="#"><i class="fa fa-envelope-o"></i> flexicell.main.mdy@gmail.com</a></li>
+                    <li><a href="#"><i class="fa fa-map-marker"></i> MANDALAY</a></li>
                 </ul>
                 <ul class="header-links pull-right">
                     @if (Auth::check() && Auth::user()->role == 'user')
@@ -63,7 +63,7 @@
                     <div class="col-md-3">
                         <div class="header-logo">
                             <a href="{{ route('home') }}" class="logo">
-                                <img src="{{ asset('img/logo.png') }}" alt="">
+                                {{-- <img src="{{ asset('img/logoremove.png') }}" alt=""> --}}
                             </a>
                         </div>
                     </div>
@@ -166,11 +166,17 @@
                 <ul class="main-nav nav navbar-nav">
                     <li class="{{ request()->routeIs('home') ? 'active' : '' }}"><a
                             href="{{ route('home') }}">Home</a></li>
-                    @foreach ($categories as $cat)
-                        <li class="{{ request()->input('category_id') == $cat->id ? 'active' : '' }}"><a
-                                href="{{ route('products.search', ['category_id' => $cat->id]) }}">{{ $cat->name }}</a>
-                        </li>
-                    @endforeach
+                        @foreach ($categories as $cat)
+                            <li class="{{ request()->input('category_id') == $cat->id ? 'active' : '' }}"><a
+                                href="{{ route('products.search', ['category_id' => $cat->id]) }}">{{ $cat->category_name }}</a>
+                            </li>
+                        @endforeach
+                            <li class="{{ request()->routeIs('trade_in') ? 'active' : '' }}"><a
+                                    href="{{ route('trade_in') }}"> Trade-In</a></li>
+                            <li class="{{ request()->routeIs('about') ? 'active' : '' }}"><a
+                                    href="{{ route('about') }}">About</a></li>
+                            <li class="{{ request()->routeIs('contact') ? 'active' : '' }}"><a
+                                    href="{{ route('contact') }}">Contact</a></li>
                 </ul>
                 <!-- /NAV -->
             </div>
@@ -195,9 +201,9 @@
                             <h3 class="footer-title">About Us</h3>
                             <p></p>
                             <ul class="footer-links">
-                                <li><a href="#"><i class="fa fa-map-marker"></i>Heho</a></li>
-                                <li><a href="#"><i class="fa fa-phone"></i>09758729263</a></li>
-                                <li><a href="#"><i class="fa fa-envelope-o"></i>myintmolinn2021@gmail.com</a>
+                                <li><a href="#"><i class="fa fa-map-marker"></i>MANDALAY</a></li>
+                                <li><a href="#"><i class="fa fa-phone"></i>09978844466</a></li>
+                                <li><a href="#"><i class="fa fa-envelope-o"></i>flexicell.main.mdy@gmail.com</a>
                                 </li>
                             </ul>
                         </div>
@@ -209,7 +215,7 @@
                             <ul class="footer-links">
                                 @foreach ($categories as $cat)
                                     <li><a
-                                            href="{{ route('products.search', ['category_id' => $cat->id]) }}">{{ $cat->name }}</a>
+                                            href="{{ route('products.search', ['category_id' => $cat->id]) }}">{{ $cat->category_name }}</a>
                                     </li>
                                 @endforeach
                             </ul>
@@ -224,9 +230,9 @@
                             <ul class="footer-links">
                                 <li><a href="{{ route('about') }}">About Us</a></li>
                                 <li><a href="{{ route('contact') }}">Contact Us</a></li>
-                                <li><a href="{{ route('privacy') }}">Privacy Policy</a></li>
+                                <li><a href="#">Privacy Policy</a></li>
                                 <li><a href="#">Orders and Returns</a></li>
-                                <li><a href="{{ route('terms') }}">Terms & Conditions</a></li>
+                                <li><a href="#">Terms & Conditions</a></li>
                             </ul>
                         </div>
                     </div>
@@ -236,9 +242,9 @@
                             <h3 class="footer-title">Service</h3>
                             <ul class="footer-links">
                                 <li><a href="#">My Account</a></li>
-                                {{-- <li><a href="#">View Cart</a></li> --}}
-                                {{-- <li><a href="#">Wishlist</a></li> --}}
-                                {{-- <li><a href="#">Track My Order</a></li> --}}
+                                <li><a href="#">View Cart</a></li>
+                                <li><a href="#">Wishlist</a></li>
+                                <li><a href="#">Track My Order</a></li>
                                 <li><a href="#">Help</a></li>
                             </ul>
                         </div>
@@ -262,8 +268,8 @@
                             <script>
                                 document.write(new Date().getFullYear());
                             </script> All rights reserved | This template is made with <i
-                                class="fa fa-heart-o" aria-hidden="true"></i> by <a href="https://htetaunglinn.com"
-                                target="_blank">HAL</a>
+                                class="fa fa-heart-o" aria-hidden="true"></i> by <a href="#"
+                                target="_blank">HMT</a>
                             <!-- Link back to Colorlib can't be removed. Template is licensed under CC BY 3.0. -->
                         </span>
                     </div>

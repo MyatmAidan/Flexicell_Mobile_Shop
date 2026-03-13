@@ -13,15 +13,22 @@ return new class extends Migration
     {
         Schema::create('tradein_estimations', function (Blueprint $table) {
             $table->id();
+
             $table->foreignId('phone_model_id')->constrained()->cascadeOnDelete();
-            $table->string('display_condition');
-            $table->string('speaker_condition');
-            $table->string('front_camera_condition');
-            $table->string('rear_camera_condition');
-            $table->string('back_glass_condition');
+
+            $table->enum('display_condition', ['good', 'minor', 'broken']);
+            $table->enum('speaker_condition', ['good', 'bad']);
+            $table->enum('front_camera_condition', ['good', 'bad']);
+            $table->enum('rear_camera_condition', ['good', 'bad']);
+            $table->enum('back_glass_condition', ['good', 'cracked']);
+
             $table->string('damage')->nullable();
             $table->string('accessories')->nullable();
+
             $table->boolean('warranty_valid')->default(false);
+
+            $table->decimal('estimated_price', 10, 2)->nullable();
+
             $table->timestamps();
         });
     }

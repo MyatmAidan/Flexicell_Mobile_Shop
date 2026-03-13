@@ -1,15 +1,93 @@
 <?php
 
-use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\AdminController;
-use App\Http\Controllers\BrandController;
-use App\Http\Controllers\DeviceController;
-use App\Http\Controllers\CategoryController;
+use App\Http\Controllers\Auth\ForgotPasswordController;
 use App\Http\Controllers\Auth\LoginController;
-use App\Http\Controllers\PhoneModelController;
 use App\Http\Controllers\Auth\RegisterController;
 use App\Http\Controllers\Auth\ResetPasswordController;
-use App\Http\Controllers\Auth\ForgotPasswordController;
+use App\Http\Controllers\BrandController;
+use App\Http\Controllers\CategoryController;
+use App\Http\Controllers\DeviceController;
+use App\Http\Controllers\DirectSaleController;
+use App\Http\Controllers\PhoneModelController;
+use App\Http\Controllers\ProductController;
+use App\Http\Controllers\UserController;
+use App\Models\Category;
+use App\Models\Product;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Route;
+
+// Public storefront
+Route::get('/', function () {
+    $categories = Category::all();
+
+    $baseQuery = Product::with('phoneModel.brand', 'phoneModel.category');
+
+    $new_products = (clone $baseQuery)->orderByDesc('created_at')->take(12)->get();
+    $popular_products = (clone $baseQuery)->orderByDesc('stock_quantity')->take(12)->get();
+    $best_sellers = (clone $baseQuery)->orderByDesc('selling_price')->take(12)->get();
+
+    return view('index', compact('categories', 'new_products', 'popular_products', 'best_sellers'));
+})->name('home');
+
+Route::get('/about', function () {
+    $categories = Category::all();
+    return view('about', compact('categories'));
+})->name('about');
+
+Route::get('/contact', function () {
+    $categories = Category::all();
+    return view('contact', compact('categories'));
+})->name('contact');
+
+Route::get('/help', function () {
+    $categories = Category::all();
+    return view('help', compact('categories'));
+})->name('help');
+
+Route::get('/trade-in', function () {
+    $categories = Category::all();
+    return view('tradeInInfo', compact('categories'));
+})->name('trade_in');
+
+Route::get('/trade-in/estimate', function () {
+    $categories = Category::all();
+    return view('tradeInEstimate', compact('categories'));
+})->name('trade_in.estimate');
+
+Route::get('/products/search', function (Request $request) {
+    $categories = Category::all();
+
+    $query = Product::with('phoneModel.brand', 'phoneModel.category');
+
+    if ($request->filled('category_id')) {
+        $categoryId = $request->input('category_id');
+        $query->whereHas('phoneModel', function ($q) use ($categoryId) {
+            $q->where('category_id', $categoryId);
+        });
+    }
+
+    if ($request->filled('query')) {
+        $term = $request->input('query');
+        $query->whereHas('phoneModel', function ($q) use ($term) {
+            $q->where('model_name', 'like', '%' . $term . '%');
+        });
+    }
+
+    $products = $query->orderByDesc('created_at')->get();
+
+    return view('search', compact('products', 'categories'));
+})->name('products.search');
+
+Route::get('/products/{product}', function (Product $product) {
+    $categories = Category::all();
+    $product->load('phoneModel.brand', 'phoneModel.category');
+
+    return view('productDetails', compact('product', 'categories'));
+})->name('products.show');
+
+Route::post('/products/update-view', function (Request $request) {
+    return response()->noContent();
+})->name('products.updateView');
 
 // Auth (guest-only)
 Route::middleware('guest')->group(function () {
@@ -38,6 +116,17 @@ Route::middleware('authCheck')->name('admin.')->group(function () {
             return view('admin.dashboard');
         })->name('dashboard');
 
+        //user routes
+        Route::prefix('user')->group(function () {
+            Route::get('/', [UserController::class, 'index'])->name('user.index');
+            Route::get('/list', [UserController::class, 'getList'])->name('user.getList');
+            Route::get('/create', [UserController::class, 'create'])->name('user.create');
+            Route::post('/', [UserController::class, 'store'])->name('user.store');
+            Route::get('/edit/{id}', [UserController::class, 'edit'])->name('user.edit');
+            Route::put('/update/{id}', [UserController::class, 'update'])->name('user.update');
+            Route::delete('/{user}', [UserController::class, 'destroy'])->name('user.destroy');
+        });
+
         //brand routes
         Route::prefix('brand')->group(function () {
             Route::get('/', [BrandController::class, 'index'])->name('brand.index');
@@ -60,10 +149,22 @@ Route::middleware('authCheck')->name('admin.')->group(function () {
             Route::delete('/{category}', [CategoryController::class, 'destroy'])->name('category.destroy');
         });
 
+        //product routes
+        Route::prefix('product')->group(function () {
+            Route::get('/', [ProductController::class, 'index'])->name('product.index');
+            Route::get('/list', [ProductController::class, 'getList'])->name('product.getList');
+            Route::get('/create', [ProductController::class, 'create'])->name('product.create');
+            Route::post('/', [ProductController::class, 'store'])->name('product.store');
+            Route::get('/edit/{id}', [ProductController::class, 'edit'])->name('product.edit');
+            Route::put('/update/{id}', [ProductController::class, 'update'])->name('product.update');
+            Route::delete('/{product}', [ProductController::class, 'destroy'])->name('product.destroy');
+        });
+
         //device routes
         Route::prefix('device')->group(function () {
             Route::get('/', [DeviceController::class, 'index'])->name('device.index');
             Route::get('/list', [DeviceController::class, 'getList'])->name('device.getList');
+            Route::get('/data/{id}', [DeviceController::class, 'getData'])->name('device.getData');
             Route::get('/create', [DeviceController::class, 'create'])->name('device.create');
             Route::post('/', [DeviceController::class, 'store'])->name('device.store');
             Route::get('/edit/{id}', [DeviceController::class, 'edit'])->name('device.edit');
@@ -81,6 +182,14 @@ Route::middleware('authCheck')->name('admin.')->group(function () {
             Route::put('/update/{id}', [PhoneModelController::class, 'update'])->name('phone_model.update');
             Route::get('/show/{id}', [PhoneModelController::class, 'show'])->name('phone_model.show');
             Route::delete('/{phoneModel}', [PhoneModelController::class, 'destroy'])->name('phone_model.destroy');
+        });
+
+        //direct sale (POS checkout)
+        Route::prefix('direct-sale')->group(function () {
+            Route::get('/', [DirectSaleController::class, 'index'])->name('direct_sale.index');
+            Route::get('/products', [DirectSaleController::class, 'searchProducts'])->name('direct_sale.products');
+            Route::get('/devices', [DirectSaleController::class, 'searchDevices'])->name('direct_sale.devices');
+            Route::post('/checkout', [DirectSaleController::class, 'checkout'])->name('direct_sale.checkout');
         });
     });
 });
