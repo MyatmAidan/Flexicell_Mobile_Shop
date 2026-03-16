@@ -136,6 +136,18 @@
                     <span class="hide-menu">Installment Plan</span>
                 </a>
             </li>
+            <li class="nav-small-cap">
+                <i class="ti ti-dots nav-small-cap-icon fs-6"></i>
+                <span class="hide-menu">Content</span>
+            </li>
+            <li class="sidebar-item">
+                <a class="sidebar-link" href="{{ route('admin.blogs.index') }}" aria-expanded="false">
+                    <span>
+                        <iconify-icon icon="solar:document-text-bold-duotone" class="fs-6"></iconify-icon>
+                    </span>
+                    <span class="hide-menu">Blogs</span>
+                </a>
+            </li>
 
         </ul>
     </nav>

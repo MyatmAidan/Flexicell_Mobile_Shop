@@ -5,8 +5,10 @@ use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\RegisterController;
 use App\Http\Controllers\Auth\ResetPasswordController;
 use App\Http\Controllers\BrandController;
+use App\Http\Controllers\BlogFrontController;
 use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\DeviceController;
+use App\Http\Controllers\BlogController;
 use App\Http\Controllers\DirectSaleController;
 use App\Http\Controllers\PhoneModelController;
 use App\Http\Controllers\ProductController;
@@ -48,6 +50,11 @@ Route::get('/trade-in', function () {
     $categories = Category::all();
     return view('tradeInInfo', compact('categories'));
 })->name('trade_in');
+
+// Blog (public)
+Route::get('/blog', [BlogFrontController::class, 'index'])->name('blogs.index');
+Route::get('/blog/{blog}', [BlogFrontController::class, 'show'])->name('blogs.show');
+
 
 Route::get('/trade-in/estimate', function () {
     $categories = Category::all();
@@ -190,6 +197,18 @@ Route::middleware('authCheck')->name('admin.')->group(function () {
             Route::get('/products', [DirectSaleController::class, 'searchProducts'])->name('direct_sale.products');
             Route::get('/devices', [DirectSaleController::class, 'searchDevices'])->name('direct_sale.devices');
             Route::post('/checkout', [DirectSaleController::class, 'checkout'])->name('direct_sale.checkout');
+        });
+
+        //blog routes
+        Route::prefix('blogs')->group(function () {
+            Route::get('/', [BlogController::class, 'index'])->name('blogs.index');
+            Route::get('/list', [BlogController::class, 'getList'])->name('blogs.getList');
+            Route::get('/create', [BlogController::class, 'create'])->name('blogs.create');
+            Route::post('/', [BlogController::class, 'store'])->name('blogs.store');
+            Route::get('/{blog}', [BlogController::class, 'show'])->name('blogs.show');
+            Route::get('/{blog}/edit', [BlogController::class, 'edit'])->name('blogs.edit');
+            Route::put('/{blog}', [BlogController::class, 'update'])->name('blogs.update');
+            Route::delete('/{blog}', [BlogController::class, 'destroy'])->name('blogs.destroy');
         });
     });
 });

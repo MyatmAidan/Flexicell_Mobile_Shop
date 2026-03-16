@@ -173,6 +173,8 @@
                         @endforeach
                             <li class="{{ request()->routeIs('trade_in') ? 'active' : '' }}"><a
                                     href="{{ route('trade_in') }}"> Trade-In</a></li>
+                            <li class="{{ request()->routeIs('blogs.index') || request()->routeIs('blogs.show') ? 'active' : '' }}"><a
+                                    href="{{ route('blogs.index') }}">Blog</a></li>
                             <li class="{{ request()->routeIs('about') ? 'active' : '' }}"><a
                                     href="{{ route('about') }}">About</a></li>
                             <li class="{{ request()->routeIs('contact') ? 'active' : '' }}"><a
@@ -201,7 +203,7 @@
                             <h3 class="footer-title">About Us</h3>
                             <p></p>
                             <ul class="footer-links">
-                                <li><a href="#"><i class="fa fa-map-marker"></i>MANDALAY</a></li>
+                                <li><a href="#"><i class="fa fa-map-marker"></i>MANDALAY Region</a></li>
                                 <li><a href="#"><i class="fa fa-phone"></i>09978844466</a></li>
                                 <li><a href="#"><i class="fa fa-envelope-o"></i>flexicell.main.mdy@gmail.com</a>
                                 </li>
@@ -230,6 +232,7 @@
                             <ul class="footer-links">
                                 <li><a href="{{ route('about') }}">About Us</a></li>
                                 <li><a href="{{ route('contact') }}">Contact Us</a></li>
+                                <li><a href="{{ route('blogs.index') }}">Blog</a></li>
                                 <li><a href="#">Privacy Policy</a></li>
                                 <li><a href="#">Orders and Returns</a></li>
                                 <li><a href="#">Terms & Conditions</a></li>
@@ -267,9 +270,9 @@
                             Copyright &copy;
                             <script>
                                 document.write(new Date().getFullYear());
-                            </script> All rights reserved | This template is made with <i
+                            </script> All rights reserved | FLEXICELL MOBILE <i
                                 class="fa fa-heart-o" aria-hidden="true"></i> by <a href="#"
-                                target="_blank">HMT</a>
+                                target="_blank">HTET MYAT THU</a>
                             <!-- Link back to Colorlib can't be removed. Template is licensed under CC BY 3.0. -->
                         </span>
                     </div>
