@@ -2,14 +2,13 @@
 
 namespace App\Http\Controllers;
 
-use Log;
+use App\Http\Requests\PhoneModelCreateRequest;
+use App\Http\Requests\PhoneModelUpdateRequest;
 use App\Models\Brands;
 use App\Models\Category;
 use App\Models\Phone_model;
-use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
-use App\Http\Requests\PhoneModelCreateRequest;
-use App\Http\Requests\PhoneModelUpdateRequest;
 
 class PhoneModelController extends Controller
 {
@@ -70,6 +69,7 @@ class PhoneModelController extends Controller
                 'battery_capacity' => $request->battery_capacity,
                 'release_year'     => $request->release_year,
                 'description'      => $request->description ?: null,
+                'available_color'  => $request->available_color ?: null,
                 'image'            => $imageFiles ?: null,
             ]);
 
@@ -133,6 +133,7 @@ class PhoneModelController extends Controller
             'battery_capacity' => $request->battery_capacity,
             'release_year'     => $request->release_year,
             'description'      => $request->description ?: null,
+            'available_color'  => $request->available_color ?: null,
             'image'            => $newImages ?: null,
         ]);
 

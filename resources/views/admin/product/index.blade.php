@@ -30,9 +30,7 @@
                                     <th>Model</th>
                                     <th>Brand</th>
                                     <th>Type</th>
-                                    <th>Price</th>
                                     <th>Stock</th>
-                                    <th>Created at</th>
                                     <th>Action</th>
                                 </tr>
                             </thead>
@@ -58,12 +56,10 @@
                 { data: 'model_name', name: 'model_name' },
                 { data: 'brand_name', name: 'brand_name' },
                 { data: 'product_type', name: 'product_type' },
-                { data: 'selling_price', name: 'selling_price' },
                 { data: 'stock_quantity', name: 'stock_quantity' },
-                { data: 'created_at', name: 'created_at' },
                 { data: 'action', name: 'action', orderable: false, searchable: false },
             ],
-            order: [[8, 'desc']],
+            order: [[6, 'desc']],
         });
 
         $(document).on('click', '.delete-btn', function (e) {

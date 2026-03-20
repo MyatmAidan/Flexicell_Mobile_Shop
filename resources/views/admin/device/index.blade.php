@@ -6,6 +6,13 @@
 @endsection
 
 @section('title', 'Device List')
+@section('style')
+<style>
+    .image-preview-item { display: inline-block; margin: 5px; position: relative; }
+    .image-preview-item img { border: 1px solid #ddd; border-radius: 4px; }
+    .image-preview-item .remove-image-btn { position: absolute; top: -5px; right: -5px; border-radius: 50%; width: 20px; height: 20px; padding: 0; font-size: 10px; }
+</style>
+@endsection
 
 @section('content')
     <div class="row">
@@ -31,9 +38,10 @@
                                     <th>IMEI</th>
                                     <th>RAM</th>
                                     <th>Storage</th>
-                                    <th>Color</th>
+                                    <th class="text-center">Color</th>
                                     <th>Status</th>
-                                    <th>Created at</th>
+                                    <th>Purchase P.</th>
+                                    <th>Selling P.</th>
                                     <th>Action</th>
                                 </tr>
                             </thead>
@@ -45,6 +53,25 @@
     </div>
 
     @include('admin.device.partials.edit-modal')
+
+    <!-- Cropper Modal -->
+    <div class="modal fade" id="cropper-modal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1">
+        <div class="modal-dialog modal-dialog-scrollable modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Crop Image</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <img id="cropper-image" src="" alt="Crop" style="max-width: 100%;">
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary" id="crop-button">Crop</button>
+                </div>
+            </div>
+        </div>
+    </div>
 @endsection
 
 @section('script')
@@ -62,12 +89,13 @@
                 { data: 'imei', name: 'imei' },
                 { data: 'ram', name: 'ram' },
                 { data: 'storage', name: 'storage' },
-                { data: 'color', name: 'color' },
+                { data: 'color', name: 'color', className: 'text-center' },
                 { data: 'status', name: 'status' },
-                { data: 'created_at', name: 'created_at' },
+                { data: 'purchase_price', name: 'purchase_price' },
+                { data: 'selling_price', name: 'selling_price' },
                 { data: 'action', name: 'action', orderable: false, searchable: false },
             ],
-            order: [[9, 'desc']],
+            order: [[8, 'desc']],
         });
 
         const deviceEditModal = new bootstrap.Modal(document.getElementById('deviceEditModal'));
@@ -91,6 +119,24 @@
                     $('#modal_battery_percentage').val(data.device.battery_percentage);
                     $('#modal_condition_grade').val(data.device.condition_grade);
                     $('#modal_status').val(data.device.status);
+                    $('#modal_purchase_price').val(data.device.purchase_price);
+                    $('#modal_selling_price').val(data.device.selling_price);
+
+                    $('#modal_image_preview_wrapper').empty();
+                    let images = data.device.image || [];
+                    if (!Array.isArray(images)) images = [images];
+                    images.forEach(img => {
+                        if (img) {
+                             $('#modal_image_preview_wrapper').append(`
+                                <div class="image-preview-item">
+                                    <img src="{{ asset('storage/devices') }}/${img}" width="100" alt="Device">
+                                    <input type="hidden" name="image[]" value="${img}">
+                                    <button type="button" class="btn btn-danger btn-sm remove-image-btn"><i class="fa-solid fa-xmark"></i></button>
+                                </div>
+                            `); 
+                        }
+                    });
+
                     deviceEditModal.show();
                 })
                 .fail(function() {
@@ -101,10 +147,13 @@
         $('#device-edit-form').on('submit', function (e) {
             e.preventDefault();
             const deviceId = $('#device_edit_id').val();
+            let formData = new FormData(this);
             $.ajax({
                 url: updateDeviceUrl + '/' + deviceId,
                 method: 'POST',
-                data: $(this).serialize(),
+                data: formData,
+                processData: false,
+                contentType: false,
                 success: function (response) {
                     deviceEditModal.hide();
                     Swal.fire({
@@ -171,6 +220,57 @@
                     }
                 });
             });
+        });
+
+        // Cropper logic
+        let cropper;
+        let cropperModal = new bootstrap.Modal(document.getElementById('cropper-modal'));
+        const cropperImage = document.getElementById('cropper-image');
+
+        $('#modal_image_input').on('change', function(e) {
+            const files = e.target.files;
+            if (files && files.length > 0) {
+                Array.from(files).forEach((file, index) => {
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        cropperImage.src = e.target.result;
+                        cropperModal.show();
+                        $('#crop-button').off('click').on('click', function() {
+                            if (!cropper) return;
+                            const canvas = cropper.getCroppedCanvas({ width: 600, height: 600 });
+                            canvas.toBlob(function(blob) {
+                                const reader2 = new FileReader();
+                                reader2.readAsDataURL(blob);
+                                reader2.onloadend = function() {
+                                    const base64data = reader2.result;
+                                    $('#modal_image_preview_wrapper').append(`
+                                        <div class="image-preview-item">
+                                            <img src="${base64data}" width="100">
+                                            <input type="hidden" name="image[]" value="${base64data}">
+                                            <button type="button" class="btn btn-danger btn-sm remove-image-btn"><i class="fa-solid fa-xmark"></i></button>
+                                        </div>
+                                    `);
+                                    cropperModal.hide();
+                                    
+                                    // Reset file input
+                                    $('#modal_image_input').val('');
+                                };
+                            }, 'image/jpeg');
+                        });
+                    };
+                    reader.readAsDataURL(file);
+                });
+            }
+        });
+
+        $('#cropper-modal').on('shown.bs.modal', function() {
+            cropper = new Cropper(cropperImage, { aspectRatio: 1, viewMode: 1 });
+        }).on('hidden.bs.modal', function() {
+            if (cropper) { cropper.destroy(); cropper = null; }
+        });
+
+        $('#modal_image_preview_wrapper').on('click', '.remove-image-btn', function() {
+            $(this).closest('.image-preview-item').remove();
         });
     });
 </script>

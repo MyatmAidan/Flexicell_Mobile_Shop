@@ -12,6 +12,7 @@ class Phone_model extends Model
     protected $casts = [
         'description' => 'array',
         'image' => 'array',
+        'available_color' => 'array',
     ];
 
     public function brand()

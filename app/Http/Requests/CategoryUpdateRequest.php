@@ -21,14 +21,15 @@ class CategoryUpdateRequest extends FormRequest
      */
     public function rules(): array
     {
-        return [
+        \Log::info("ID is " . $this->route("id")); return [
             'category_name' => 'required|string|max:255|unique:categories,category_name,' . $this->route('id'),
+            'color' => 'nullable|string|max:7',
         ];
     }
 
     public function messages(): array
     {
-        return [
+        \Log::info("ID is " . $this->route("id")); return [
             'category_name.required' => 'Category name is required.',
             'category_name.string' => 'Category name must be a string.',
             'category_name.max' => 'Category name must not exceed 255 characters.',

@@ -29,6 +29,9 @@ class DeviceUpdateRequest extends FormRequest
             'battery_percentage' => 'required|integer|min:0|max:100',
             'condition_grade' => 'required|string|max:20',
             'status' => 'nullable|in:available,sold,reserved,defective',
+            'purchase_price' => 'nullable|numeric|min:0',
+            'selling_price' => 'nullable|numeric|min:0',
+            'image' => 'nullable|array',
         ];
     }
 

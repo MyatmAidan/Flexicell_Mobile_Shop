@@ -33,6 +33,8 @@ class PhoneModelUpdateRequest extends FormRequest
             'description' => 'nullable|array',
             'description.*.key' => 'nullable|string',
             'description.*.value' => 'nullable|string',
+            'available_color' => 'nullable|array',
+            'available_color.*' => 'nullable|string',
             'image' => 'nullable|array',
             'image.*' => 'nullable|string',
         ];

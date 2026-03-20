@@ -137,20 +137,8 @@
                 Array.from(files).forEach((file, index) => {
                     const reader = new FileReader();
                     reader.onload = function(e) {
-                        if (index === 0) {
-                            currentFile = file;
-                            cropperImage.src = e.target.result;
-                            cropperModal.show();
-                        } else {
-                            const base64data = e.target.result;
-                            $('#image-preview-wrapper').append(`
-                                <div class="image-preview-item">
-                                    <img src="${base64data}" width="100">
-                                    <input type="hidden" name="image[]" value="${base64data}">
-                                    <button type="button" class="btn btn-danger btn-sm remove-image-btn"><i class="fa-solid fa-xmark"></i></button>
-                                </div>
-                            `);
-                        }
+                        cropperImage.src = e.target.result;
+                        cropperModal.show();
                     };
                     reader.readAsDataURL(file);
                 });
@@ -181,8 +169,11 @@
                         </div>
                     `);
                     cropperModal.hide();
+                    
+                    // Reset file input
+                    $('#image-input').val('');
                 };
-            });
+            }, 'image/jpeg');
         });
 
         $('#image-preview-wrapper').on('click', '.remove-image-btn', function() {

@@ -23,6 +23,7 @@ class CategoryCreateRequest extends FormRequest
     {
         return [
             'category_name' => 'required|string|max:255|unique:categories,category_name',
+            'color' => 'nullable|string|max:7',
         ];
     }
 

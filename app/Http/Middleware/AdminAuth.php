@@ -19,7 +19,7 @@ class AdminAuth
         $user = Auth::user();
         
         if (!$user || $user->role !== 'admin') {
-            abort(403, 'Unauthorized action. Admin access required.');
+            return redirect()->route('home')->with('error', 'Unauthorized action. Admin access required.');
         }
 
         return $next($request);

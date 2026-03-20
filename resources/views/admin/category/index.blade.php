@@ -6,6 +6,37 @@
 @endsection
 
 @section('title', 'Category List')
+@section('style')
+<style>
+    .color-picker-container {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+    }
+    .color-option {
+        width: 40px;
+        height: 40px;
+        border-radius: 4px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border: 2px solid transparent;
+        transition: transform 0.1s;
+    }
+    .color-option.selected {
+        transform: scale(1.1);
+        box-shadow: 0 0 5px rgba(0,0,0,0.3);
+    }
+    .color-option.selected::after {
+        content: '\f00c';
+        font-family: "Font Awesome 6 Free", "Font Awesome 5 Free", "FontAwesome";
+        font-weight: 900;
+        color: white;
+        text-shadow: 0 0 3px rgba(0,0,0,0.8);
+    }
+</style>
+@endsection
 @section('content')
     <div class="row">
         <div class="col-md-12">
@@ -26,6 +57,7 @@
                                     <th></th>
                                     <th>#</th>
                                     <th>Name</th>
+                                    <th>Color</th>
                                     <th>Created at</th>
                                     <th>Action</th>
                                 </tr>
@@ -54,6 +86,21 @@
                             <label class="form-label">Category Name</label>
                             <input type="text" name="category_name" class="form-control" required>
                         </div>
+                        <div class="mb-3">
+                            <label class="form-label">Category Color</label>
+                            <div class="color-picker-container" id="create_color_picker">
+                                <div class="color-option" data-color="#E0E0E0" style="background-color: #E0E0E0;"></div>
+                                <div class="color-option" data-color="#F44336" style="background-color: #F44336;"></div>
+                                <div class="color-option" data-color="#E91E63" style="background-color: #E91E63;"></div>
+                                <div class="color-option" data-color="#FF9800" style="background-color: #FF9800;"></div>
+                                <div class="color-option" data-color="#FFEB3B" style="background-color: #FFEB3B;"></div>
+                                <div class="color-option" data-color="#4CAF50" style="background-color: #4CAF50;"></div>
+                                <div class="color-option" data-color="#2196F3" style="background-color: #2196F3;"></div>
+                                <div class="color-option" data-color="#9C27B0" style="background-color: #9C27B0;"></div>
+                            </div>
+                            <input type="hidden" name="color" id="create_color_input" value="">
+                        </div>
+                    </div>
 
                     <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
@@ -79,9 +126,23 @@
                         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                     </div>
                     <div class="modal-body">
-                        <div class="form-group">
+                        <div class="form-group mb-3">
                             <label for="edit_name">Category Name</label>
-                            <input type="text" class="form-control" id="edit_name" name="category_name" placeholder="Enter category name" />
+                            <input type="text" class="form-control" id="edit_name" name="category_name" placeholder="Enter category name" required/>
+                        </div>
+                        <div class="form-group mb-3">
+                            <label for="edit_color">Category Color</label>
+                            <div class="color-picker-container" id="edit_color_picker">
+                                <div class="color-option" data-color="#E0E0E0" style="background-color: #E0E0E0;"></div>
+                                <div class="color-option" data-color="#F44336" style="background-color: #F44336;"></div>
+                                <div class="color-option" data-color="#E91E63" style="background-color: #E91E63;"></div>
+                                <div class="color-option" data-color="#FF9800" style="background-color: #FF9800;"></div>
+                                <div class="color-option" data-color="#FFEB3B" style="background-color: #FFEB3B;"></div>
+                                <div class="color-option" data-color="#4CAF50" style="background-color: #4CAF50;"></div>
+                                <div class="color-option" data-color="#2196F3" style="background-color: #2196F3;"></div>
+                                <div class="color-option" data-color="#9C27B0" style="background-color: #9C27B0;"></div>
+                            </div>
+                            <input type="hidden" name="color" id="edit_color" value="">
                         </div>
                         <input type="hidden" id="edit_id" name="id">
                     </div>
@@ -122,6 +183,10 @@
                         data: 'category_name', 
                         name: 'category_name'
                     },
+                    { 
+                        data: 'color', 
+                        name: 'color'
+                    },
                     {   data: 'created_at', 
                         name: 'created_at',
                     },
@@ -132,12 +197,22 @@
                         searchable: false 
                     },
                 ],
-                order: [[3, 'desc']],
+                order: [[4, 'desc']],
             });
 
             $('#createCategoryModal').on('hidden.bs.modal', function () {
                 $('#createCategoryForm')[0].reset();
                 $('#logoPreview').hide().attr('src', '');
+                $('#create_color_picker .color-option').removeClass('selected');
+                $('#create_color_input').val('');
+            });
+
+            // Handle color picker selection
+            $(document).on('click', '.color-option', function() {
+                let container = $(this).closest('.color-picker-container');
+                container.find('.color-option').removeClass('selected');
+                $(this).addClass('selected');
+                container.next('input[name="color"]').val($(this).data('color'));
             });
 
             // Create Category
@@ -191,14 +266,29 @@
             $(document).on('click', '.edit-category-btn', function (e) {
                 e.preventDefault();
 
-                let id   = $(this).data('id');
-                let name = $(this).data('name');
+                let id    = $(this).data('id');
+                let name  = $(this).data('name');
+                let color = $(this).data('color') || '#000000';
 
                 $('#edit_id').val(id);
                 $('#edit_name').val(name);
+                $('#edit_color').val(color);
+                $('#edit_color_picker .color-option').removeClass('selected');
+                if (color) {
+                    $('#edit_color_picker .color-option[data-color="'+color+'"]').addClass('selected');
+                }
 
                 let updateUrl = updateUrlTemplate.replace(':id', id);
                 $('#editForm').attr('action', updateUrl);
+
+                $('#editModal').modal('show');
+            });
+
+            $('#editModal').on('hidden.bs.modal', function () {
+                $('#editForm')[0].reset();
+                $('#edit_id').val('');
+                $('#edit_color_picker .color-option').removeClass('selected');
+                $('#edit_color').val('');
             });
 
 

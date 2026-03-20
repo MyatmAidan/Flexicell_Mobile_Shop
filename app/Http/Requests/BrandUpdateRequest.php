@@ -24,6 +24,7 @@ class BrandUpdateRequest extends FormRequest
         return [
             'brand_name' => 'required|string|max:255',
             'logo' => 'nullable|image',
+            'color' => 'nullable|string|max:7',
         ];
     }
 

@@ -1,7 +1,6 @@
 <div>
     <div class="brand-logo d-flex align-items-center justify-content-between">
         <a href="" class="text-nowrap logo-img">
-            {{-- {{ route('admin.index') }} --}}
             <img src="{{ asset('img/logo.png') }}" alt="" />
         </a>
         <div class="close-btn d-xl-none d-block sidebartoggler cursor-pointer" id="sidebarCollapse">
@@ -112,22 +111,22 @@
                     <span class="hide-menu">Orders</span>
                 </a>
             </li>
-            <li class="sidebar-item">
+            {{-- <li class="sidebar-item">
                 <a class="sidebar-link" href="#" aria-expanded="false">
                     <span>
                         <iconify-icon icon="solar:wallet-money-bold-duotone" class="fs-6"></iconify-icon>
                     </span>
                     <span class="hide-menu">Payments</span>
                 </a>
-            </li>
-            <li class="sidebar-item">
+            </li> --}}
+            {{-- <li class="sidebar-item">
                 <a class="sidebar-link" href="#" aria-expanded="false">
                     <span>
                         <iconify-icon icon="solar:card-bold-duotone" class="fs-6"></iconify-icon>
                     </span>
                     <span class="hide-menu">Payment Method</span>
                 </a>
-            </li>
+            </li> --}}
             <li class="sidebar-item">
                 <a class="sidebar-link" href="#" aria-expanded="false">
                     <span>
@@ -148,7 +147,6 @@
                     <span class="hide-menu">Blogs</span>
                 </a>
             </li>
-
         </ul>
     </nav>
     <!-- End Sidebar navigation -->

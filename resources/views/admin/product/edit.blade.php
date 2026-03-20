@@ -138,6 +138,9 @@
                                             data-battery="{{ $device->battery_percentage }}"
                                             data-condition="{{ $device->condition_grade }}"
                                             data-status="{{ $device->status }}"
+                                            data-purchase_price="{{ $device->purchase_price }}"
+                                            data-selling_price="{{ $device->selling_price }}"
+                                            data-image="{{ is_array($device->image) ? json_encode($device->image) : ($device->image ? json_encode([$device->image]) : '[]') }}"
                                             data-product-id="{{ $device->product_id }}">
                                             <td>{{ $index + 1 }}</td>
                                             <td class="device-imei">{{ $device->imei }}</td>
@@ -290,17 +293,84 @@
             $('#modal_battery_percentage').val(row.data('battery'));
             $('#modal_condition_grade').val(row.data('condition'));
             $('#modal_status').val(row.data('status'));
+            $('#modal_purchase_price').val(row.data('purchase_price') || '');
+            $('#modal_selling_price').val(row.data('selling_price') || '');
+            $('#modal_image_preview_wrapper').empty();
+            let imagesData = row.data('image');
+            if (imagesData) {
+                let parsedImages = [];
+                try {
+                    parsedImages = typeof imagesData === 'string' ? JSON.parse(imagesData) : imagesData;
+                } catch(e) { parsedImages = [imagesData]; }
+                
+                if (Array.isArray(parsedImages)) {
+                    parsedImages.forEach(img => {
+                        if(img) {
+                           $('#modal_image_preview_wrapper').append(`
+                                <div class="image-preview-item">
+                                    <img src="{{ asset('storage/devices') }}/${img}" width="100" alt="Device">
+                                    <input type="hidden" name="image[]" value="${img}">
+                                    <button type="button" class="btn btn-danger btn-sm remove-image-btn"><i class="fa-solid fa-xmark"></i></button>
+                                </div>
+                            `); 
+                        }
+                    });
+                }
+            }
             $('#device-edit-form').attr('action', updateDeviceUrl + '/' + deviceId);
             deviceEditModal.show();
+        });
+
+        $('#modal_image_input').on('change', function(e) {
+            const files = e.target.files;
+            if (files && files.length > 0) {
+                Array.from(files).forEach((file, index) => {
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        cropperImage.src = e.target.result;
+                        cropperModal.show();
+                        $('#crop-button').off('click').on('click', function() {
+                            if (!cropper) return;
+                            const canvas = cropper.getCroppedCanvas({ width: 600, height: 600 });
+                            canvas.toBlob(function(blob) {
+                                const reader2 = new FileReader();
+                                reader2.readAsDataURL(blob);
+                                reader2.onloadend = function() {
+                                    const base64data = reader2.result;
+                                    $('#modal_image_preview_wrapper').append(`
+                                        <div class="image-preview-item">
+                                            <img src="${base64data}" width="100">
+                                            <input type="hidden" name="image[]" value="${base64data}">
+                                            <button type="button" class="btn btn-danger btn-sm remove-image-btn"><i class="fa-solid fa-xmark"></i></button>
+                                        </div>
+                                    `);
+                                    cropperModal.hide();
+                                    
+                                    // Reset file input
+                                    $('#modal_image_input').val('');
+                                };
+                            }, 'image/jpeg');
+                        });
+                    };
+                    reader.readAsDataURL(file);
+                });
+            }
+        });
+
+        $('#modal_image_preview_wrapper').on('click', '.remove-image-btn', function() {
+            $(this).closest('.image-preview-item').remove();
         });
 
         $('#device-edit-form').on('submit', function(e) {
             e.preventDefault();
             const deviceId = $('#device_edit_id').val();
+            let formData = new FormData(this);
             $.ajax({
                 url: "{{ url('admin/device/update') }}/" + deviceId,
                 method: 'POST',
-                data: $(this).serialize(),
+                data: formData,
+                processData: false,
+                contentType: false,
                 success: function(response) {
                     deviceEditModal.hide();
                     Swal.fire({ toast: true, position: 'top-end', icon: 'success', title: response.message, timer: 2000, showConfirmButton: false });
@@ -309,6 +379,20 @@
                     row.data('ram', $('#modal_ram').val());
                     row.data('storage', $('#modal_storage').val());
                     row.data('color', $('#modal_color').val());
+                    row.data('purchase_price', $('#modal_purchase_price').val());
+                    row.data('selling_price', $('#modal_selling_price').val());
+                    
+                    let imageArray = [];
+                    $('#modal_image_preview_wrapper input[name="image[]"]').each(function() {
+                        let val = $(this).val();
+                        if (val.startsWith('data:image')) {
+                             imageArray.push('pending_reload'); 
+                        } else {
+                             imageArray.push(val);
+                        }
+                    });
+                    row.data('image', JSON.stringify(imageArray));
+
                     row.data('battery', $('#modal_battery_percentage').val());
                     row.data('condition', $('#modal_condition_grade').val());
                     row.data('status', $('#modal_status').val());

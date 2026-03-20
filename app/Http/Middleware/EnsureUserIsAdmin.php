@@ -17,7 +17,7 @@ class EnsureUserIsAdmin
     public function handle(Request $request, Closure $next): Response
     {
         if (!Auth::check() || Auth::user()->role !== 'admin') {
-            abort(403, 'Unauthorized action.');
+            return redirect()->route('home')->with('error', 'Unauthorized action.');
         }
 
         return $next($request);

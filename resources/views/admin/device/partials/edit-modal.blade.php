@@ -46,7 +46,7 @@
                         <div class="col-md-6">
                             <div class="form-group mb-3">
                                 <label for="modal_color" class="form-label">Color <span class="text-danger">*</span></label>
-                                <input type="text" class="form-control" id="modal_color" name="color" placeholder="e.g. Black" required>
+                                <input type="color" class="form-control form-control-color w-100" id="modal_color" name="color" value="#000000" required>
                             </div>
                         </div>
                         <div class="col-md-6">
@@ -74,6 +74,25 @@
                                 </select>
                             </div>
                         </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group mb-3">
+                                <label for="modal_purchase_price" class="form-label">Purchase Price</label>
+                                <input type="number" step="0.01" class="form-control" id="modal_purchase_price" name="purchase_price" placeholder="0.00">
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group mb-3">
+                                <label for="modal_selling_price" class="form-label">Selling Price</label>
+                                <input type="number" step="0.01" class="form-control" id="modal_selling_price" name="selling_price" placeholder="0.00">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="form-group mb-3">
+                        <label for="modal_image_input" class="form-label">Images</label>
+                        <input type="file" class="form-control" id="modal_image_input" accept="image/*" multiple>
+                        <div class="mt-2" id="modal_image_preview_wrapper"></div>
                     </div>
                 </div>
                 <div class="modal-footer">

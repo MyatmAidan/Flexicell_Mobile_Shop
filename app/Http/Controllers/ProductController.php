@@ -42,9 +42,6 @@ class ProductController extends Controller
                 $url = asset('storage/products/' . $first);
                 return '<img src="' . $url . '" alt="Product" class="img-thumbnail" style="width: 50px; height: 50px; object-fit: cover;">';
             })
-            ->editColumn('selling_price', function ($product) {
-                return number_format($product->selling_price, 2);
-            })
             ->addColumn('action', function ($product) {
                 $editUrl = route('admin.product.edit', $product->id);
                 return '<div class="action-btn" role="group">' .

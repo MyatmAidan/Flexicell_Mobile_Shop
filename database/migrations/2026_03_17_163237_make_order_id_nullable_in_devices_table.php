@@ -12,7 +12,9 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('devices', function (Blueprint $table) {
-            $table->foreignId('order_id')->nullable()->after('product_id')->constrained()->nullOnDelete();
+            $table->dropForeign(['order_id']);
+            $table->unsignedBigInteger('order_id')->nullable()->change();
+            $table->foreign('order_id')->references('id')->on('orders')->nullOnDelete();
         });
     }
 
@@ -22,7 +24,9 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('devices', function (Blueprint $table) {
-            $table->dropConstrainedForeignId('order_id');
+            $table->dropForeign(['order_id']);
+            $table->unsignedBigInteger('order_id')->nullable(false)->change();
+            $table->foreign('order_id')->references('id')->on('orders')->cascadeOnDelete();
         });
     }
 };

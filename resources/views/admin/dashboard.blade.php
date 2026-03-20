@@ -13,7 +13,7 @@
                         <div class="flex-shrink-0">
                             <i class="fas fa-dollar-sign fa-3x text-success"></i>
                         </div>
-                        {{-- <div class="flex-grow-1 ms-3">
+                        <div class="flex-grow-1 ms-3">
                             <h5 class="card-title">Total Revenue</h5>
                             <h3 class="mb-0">{{ number_format($totalRevenue, 2) }} MMK</h3>
                             <small class="text-muted">
@@ -24,7 +24,7 @@
                                     <span class="text-danger">{{ number_format($revenueGrowth, 1) }}%</span>
                                 @endif
                             </small>
-                        </div> --}}
+                        </div>
                     </div>
                 </div>
             </div>
@@ -38,7 +38,7 @@
                         <div class="flex-shrink-0">
                             <i class="fas fa-shopping-cart fa-3x text-primary"></i>
                         </div>
-                        {{-- <div class="flex-grow-1 ms-3">
+                        <div class="flex-grow-1 ms-3">
                             <h5 class="card-title">Total Orders</h5>
                             <h3 class="mb-0">{{ number_format($totalOrders) }}</h3>
                             <small class="text-muted">
@@ -49,7 +49,7 @@
                                     <span class="text-danger">{{ number_format($orderGrowth, 1) }}%</span>
                                 @endif
                             </small>
-                        </div> --}}
+                        </div>
                     </div>
                 </div>
             </div>
@@ -59,7 +59,7 @@
         <div class="col-lg-3 col-md-6">
             <div class="card">
                 <div class="card-body">
-                    {{-- <div class="d-flex align-items-center">
+                    <div class="d-flex align-items-center">
                         <div class="flex-shrink-0">
                             <i class="fas fa-users fa-3x text-info"></i>
                         </div>
@@ -70,7 +70,7 @@
                                 New this month: {{ $newCustomersThisMonth }}
                             </small>
                         </div>
-                    </div> --}}
+                    </div>
                 </div>
             </div>
         </div>
@@ -79,7 +79,7 @@
         <div class="col-lg-3 col-md-6">
             <div class="card">
                 <div class="card-body">
-                    {{-- <div class="d-flex align-items-center">
+                    <div class="d-flex align-items-center">
                         <div class="flex-shrink-0">
                             <i class="fas fa-mobile-alt fa-3x text-warning"></i>
                         </div>
@@ -90,7 +90,7 @@
                                 Active: {{ $activeProducts }} | Low Stock: {{ $lowStockProducts }}
                             </small>
                         </div>
-                    </div> --}}
+                    </div>
                 </div>
             </div>
         </div>
@@ -101,7 +101,7 @@
         <!-- Payment Statistics -->
         <div class="col-lg-6">
             <div class="card">
-                {{-- <div class="card-body">
+                <div class="card-body">
                     <h5 class="card-title">Payment Statistics</h5>
                     <div class="row">
                         <div class="col-6">
@@ -120,14 +120,14 @@
                     <div class="mt-3">
                         <strong>Total Payment Amount: {{ number_format($totalPaymentAmount, 2) }} MMK</strong>
                     </div>
-                </div> --}}
+                </div>
             </div>
         </div>
 
         <!-- Installment Statistics -->
         <div class="col-lg-6">
             <div class="card">
-                {{-- <div class="card-body">
+                <div class="card-body">
                     <h5 class="card-title">Installment Statistics</h5>
                     <div class="row">
                         <div class="col-6">
@@ -146,11 +146,7 @@
                     <div class="mt-3">
                         <strong>Pending Amount: {{ number_format($totalInstallmentAmount, 2) }} MMK</strong>
                     </div>
-                    <div class="mt-2">
-                        <a href="{{ route('admin.installment_payment.upcoming') }}" class="btn btn-primary btn-sm">View
-                            Details</a>
-                    </div>
-                </div> --}}
+                </div>
             </div>
         </div>
     </div>
@@ -159,7 +155,7 @@
     <div class="row mt-4">
         <!-- Monthly Revenue Chart -->
         <div class="col-lg-8">
-            <div class="card">
+            <div class="card h-100">
                 <div class="card-body">
                     <h5 class="card-title">Monthly Revenue Trend</h5>
                     <canvas id="revenueChart" height="100"></canvas>
@@ -167,10 +163,21 @@
             </div>
         </div>
 
-        <!-- System Overview -->
+        <!-- Right Column -->
         <div class="col-lg-4">
+            <!-- Product Stock Doughnut Chart -->
+            <div class="card mb-4">
+                <div class="card-body">
+                    <h5 class="card-title">Product Stock Status</h5>
+                    <div style="height: 260px; display: flex; justify-content: center; align-items: center;">
+                        <canvas id="stockStatusChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- System Overview -->
             <div class="card">
-                {{-- <div class="card-body">
+                <div class="card-body">
                     <h5 class="card-title">System Overview</h5>
                     <div class="mb-3">
                         <div class="d-flex justify-content-between">
@@ -196,7 +203,7 @@
                             <span class="badge bg-danger">{{ $outOfStockProducts }}</span>
                         </div>
                     </div>
-                </div> --}}
+                </div>
             </div>
         </div>
     </div>
@@ -219,22 +226,22 @@
                                     <th>Date</th>
                                 </tr>
                             </thead>
-                            {{-- <tbody>
+                            <tbody>
                                 @foreach ($recentOrders as $order)
                                     <tr>
                                         <td>#{{ $order->id }}</td>
-                                        <td>{{ $order->customer->name ?? 'N/A' }}</td>
-                                        <td>{{ number_format($order->total_amount, 0) }} MMK</td>
+                                        <td>{{ $order->user->name ?? 'N/A' }}</td>
+                                        <td>{{ number_format($order->grand_total, 0) }} MMK</td>
                                         <td>
                                             <span
-                                                class="badge bg-{{ $order->status == 'delivered' ? 'success' : ($order->status == 'processing' ? 'warning' : 'secondary') }}">
-                                                {{ ucfirst($order->status) }}
+                                                class="badge bg-{{ $order->order_status == 'delivered' ? 'success' : ($order->order_status == 'processing' ? 'warning' : 'secondary') }}">
+                                                {{ ucfirst($order->order_status) }}
                                             </span>
                                         </td>
                                         <td>{{ $order->created_at->format('M d, Y') }}</td>
                                     </tr>
                                 @endforeach
-                            </tbody> --}}
+                            </tbody>
                         </table>
                     </div>
                 </div>
@@ -257,13 +264,13 @@
                                     <th>Stock</th>
                                 </tr>
                             </thead>
-                            {{-- <tbody>
+                            <tbody>
                                 @foreach ($topProducts as $product)
                                     <tr>
-                                        <td>{{ $product->name }}</td>
-                                        <td>{{ $product->category->name ?? 'N/A' }}</td>
-                                        <td>{{ $product->brand->name ?? 'N/A' }}</td>
-                                        <td>{{ $product->order_items_count }}</td>
+                                        <td>{{ $product->phoneModel->model_name ?? 'N/A' }}</td>
+                                        <td>{{ $product->phoneModel->category->category_name ?? 'N/A' }}</td>
+                                        <td>{{ $product->phoneModel->brand->brand_name ?? 'N/A' }}</td>
+                                        <td>{{ $product->devices_count ?? 0 }}</td>
                                         <td>
                                             <span
                                                 class="badge bg-{{ $product->stock_quantity > 10 ? 'success' : ($product->stock_quantity > 0 ? 'warning' : 'danger') }}">
@@ -272,7 +279,7 @@
                                         </td>
                                     </tr>
                                 @endforeach
-                            </tbody> --}}
+                            </tbody>
                         </table>
                     </div>
                 </div>
@@ -284,6 +291,104 @@
 @section('script')
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script>
-        
+        document.addEventListener("DOMContentLoaded", function () {
+            const ctx = document.getElementById('revenueChart').getContext('2d');
+            
+            const chartLabels = @json($chartLabels);
+            const revenueData = @json($revenueData);
+            const orderData = @json($orderData);
+            
+            const doughnutLabels = @json($doughnutLabels);
+            const doughnutData = @json($doughnutData);
+
+            new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: chartLabels,
+                    datasets: [
+                        {
+                            label: 'Revenue (MMK)',
+                            data: revenueData,
+                            backgroundColor: 'rgba(54, 162, 235, 0.5)',
+                            borderColor: 'rgba(54, 162, 235, 1)',
+                            borderWidth: 1,
+                            yAxisID: 'y'
+                        },
+                        {
+                            label: 'Orders',
+                            data: orderData,
+                            type: 'line',
+                            backgroundColor: 'rgba(255, 99, 132, 0.5)',
+                            borderColor: 'rgba(255, 99, 132, 1)',
+                            borderWidth: 2,
+                            yAxisID: 'y1'
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    interaction: {
+                        mode: 'index',
+                        intersect: false,
+                    },
+                    scales: {
+                        y: {
+                            type: 'linear',
+                            display: true,
+                            position: 'left',
+                            title: {
+                                display: true,
+                                text: 'Revenue (MMK)'
+                            }
+                        },
+                        y1: {
+                            type: 'linear',
+                            display: true,
+                            position: 'right',
+                            grid: {
+                                drawOnChartArea: false,
+                            },
+                            title: {
+                                display: true,
+                                text: 'Orders'
+                            }
+                        }
+                    }
+                }
+            });
+
+            // Doughnut Chart for Product Stock Status
+            const doughnutCtx = document.getElementById('stockStatusChart').getContext('2d');
+            new Chart(doughnutCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: doughnutLabels,
+                    datasets: [{
+                        data: doughnutData,
+                        backgroundColor: [
+                            '#198754', // Active Stock (Success)
+                            '#ffc107', // Low Stock (Warning)
+                            '#dc3545'  // Out of Stock (Danger)
+                        ],
+                        borderWidth: 1,
+                        hoverOffset: 4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: {
+                                padding: 20,
+                                usePointStyle: true,
+                            }
+                        }
+                    },
+                    cutout: '70%',
+                }
+            });
+        });
     </script>
 @endsection

@@ -150,6 +150,30 @@
                                 </button>
                             </div>
                             <div class="form-group mb-3">
+                                <label class="form-label">Available Colors</label>
+                                <div id="color-wrapper">
+                                    @php
+                                        $available_colors = old('available_color', $phoneModel->available_color ?? ['#000000']);
+                                        if (empty($available_colors)) {
+                                            $available_colors = ['#000000'];
+                                        }
+                                    @endphp
+                                    @foreach ($available_colors as $color)
+                                        <div class="row mb-2">
+                                            <div class="col-md-3">
+                                                <input type="color" class="form-control form-control-color w-100" name="available_color[]"
+                                                    value="{{ $color }}" title="Choose a color">
+                                            </div>
+                                            <div class="col-md-2">
+                                                <button type="button" class="btn btn-danger remove-color-btn"><i
+                                                        class="fa-solid fa-xmark"></i></button>
+                                            </div>
+                                        </div>
+                                    @endforeach
+                                </div>
+                                <button type="button" class="btn btn-primary" id="add-color-btn">Add Color</button>
+                            </div>
+                            <div class="form-group mb-3">
                                 <label for="logo-input" class="form-label">Images <span
                                         class="text-danger fs-5">*</span></label>
                                 <input type="file" class="form-control" id="logo-input" accept="image/*" multiple>
@@ -218,6 +242,23 @@
             });
 
             $('#description-wrapper').on('click', '.remove-description-btn', function() {
+                $(this).closest('.row').remove();
+            });
+
+            $('#add-color-btn').on('click', function() {
+                $('#color-wrapper').append(`
+                    <div class="row mb-2">
+                        <div class="col-md-3">
+                            <input type="color" class="form-control form-control-color w-100" name="available_color[]" value="#000000" title="Choose a color">
+                        </div>
+                        <div class="col-md-2">
+                            <button type="button" class="btn btn-danger remove-color-btn"><i class="fa-solid fa-xmark"></i></button>
+                        </div>
+                    </div>
+                `);
+            });
+
+            $('#color-wrapper').on('click', '.remove-color-btn', function() {
                 $(this).closest('.row').remove();
             });
 

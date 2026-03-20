@@ -24,6 +24,7 @@ class BrandCreateRequest extends FormRequest
         return [
             'brand_name' => 'required|string|max:255|unique:brands,brand_name',
             'logo' => 'nullable|image',
+            'color' => 'nullable|string|max:7',
         ];
     }
 

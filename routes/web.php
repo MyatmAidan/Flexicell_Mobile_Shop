@@ -4,11 +4,12 @@ use App\Http\Controllers\Auth\ForgotPasswordController;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\RegisterController;
 use App\Http\Controllers\Auth\ResetPasswordController;
-use App\Http\Controllers\BrandController;
-use App\Http\Controllers\BlogFrontController;
-use App\Http\Controllers\CategoryController;
-use App\Http\Controllers\DeviceController;
 use App\Http\Controllers\BlogController;
+use App\Http\Controllers\BlogFrontController;
+use App\Http\Controllers\BrandController;
+use App\Http\Controllers\CategoryController;
+use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\DeviceController;
 use App\Http\Controllers\DirectSaleController;
 use App\Http\Controllers\PhoneModelController;
 use App\Http\Controllers\ProductController;
@@ -115,13 +116,11 @@ Route::middleware('authCheck')->group(function () {
     Route::post('/logout', [LoginController::class, 'logout'])->name('logout');
 });
 
-Route::middleware('authCheck')->name('admin.')->group(function () {
+Route::middleware(['authCheck', 'adminAuth'])->name('admin.')->group(function () {
 
     Route::prefix('admin')->group(function () {
 
-        Route::get('/', function () {
-            return view('admin.dashboard');
-        })->name('dashboard');
+        Route::get('/', [DashboardController::class, 'index'])->name('dashboard');
 
         //user routes
         Route::prefix('user')->group(function () {

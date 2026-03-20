@@ -26,6 +26,7 @@ class BrandController extends Controller
         Brands::create([
             'brand_name' => $request->brand_name,
             'logo' => $request->file('logo')?->store('brands', 'public'),
+            'color' => $request->color,
         ]);
 
         return response()->json([
@@ -45,15 +46,19 @@ class BrandController extends Controller
             ->editColumn('logo', function ($brand) {
                 return '<img src="' . $brand->logoUrl() . '" alt="' . $brand->brand_name . '" class="img-thumbnail" style="width: 50px; height: 50px;">';
             })
+            ->editColumn('color', function ($brand) {
+                $color = $brand->color ?? '#000000';
+                return '<div class="mx-auto" style="display:inline-block; width: 20px; height: 20px; background-color: ' . htmlspecialchars($color, ENT_QUOTES) . '; border-radius: 50%; border: 1px solid #ddd;" title="' . htmlspecialchars($color, ENT_QUOTES) . '"></div>';
+            })
             ->addColumn('action', function ($brand) {
                 $id = $brand->id;
                 $logoName = $brand->logo ? basename($brand->logo) : '';
-                $editBtn = '<a href="#" class="btn btn-sm mx-2 px-3 edit-brand-btn py-2 btn-primary" title="edit" data-id="' . $id . '" data-name="' . htmlspecialchars($brand->brand_name, ENT_QUOTES) . '" data-logo="' . $brand->logoUrl() . '" data-logo-name="' . $logoName . '"><i class="fas fa-edit"></i> </a>';
+                $editBtn = '<a href="#" class="btn btn-sm mx-2 px-3 edit-brand-btn py-2 btn-primary" title="edit" data-id="' . $id . '" data-name="' . htmlspecialchars($brand->brand_name, ENT_QUOTES) . '" data-logo="' . $brand->logoUrl() . '" data-logo-name="' . $logoName . '" data-color="' . htmlspecialchars($brand->color ?? '#000000', ENT_QUOTES) . '"><i class="fas fa-edit"></i> </a>';
                 $deleteBtn = '<a href="#" class="btn btn-danger btn-sm px-3 py-2 delete-btn" data-id="' . $id . '" title="delete"><i class="fa fa-trash-alt"></i> </a>';
                 return '<div class="action-btn" role="group">' . $editBtn . ' ' . $deleteBtn . '</div>';
             })
 
-            ->rawColumns(['logo', 'action', 'plus-icon'])
+            ->rawColumns(['logo', 'action', 'plus-icon', 'color'])
             ->make(true);
     }
 
@@ -83,6 +88,7 @@ class BrandController extends Controller
             $brand = Brands::findOrFail($id);
             $data = [
                 'brand_name' => $request->brand_name,
+                'color'      => $request->color,
             ];
 
             if ($request->hasFile('logo')) {

@@ -2,10 +2,11 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\BlogCreateRequest;
+use App\Http\Requests\BlogUpdateRequest;
 use App\Models\Blog;
 use App\Models\BlogContent;
 use App\Models\BlogContentImage;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Yajra\DataTables\Facades\DataTables;
@@ -51,17 +52,8 @@ class BlogController extends Controller
         return view('admin.blogs.create');
     }
 
-    public function store(Request $request)
+    public function store(BlogCreateRequest $request)
     {
-        $request->validate([
-            'title'              => 'required|string|max:255',
-            'main_image_data'    => 'nullable|string',
-            'section_titles'     => 'required|array|min:1',
-            'section_titles.*'   => 'required|string|max:255',
-            'section_contents'   => 'required|array|min:1',
-            'section_contents.*' => 'required|string',
-        ]);
-
         try {
             DB::beginTransaction();
 
@@ -124,17 +116,8 @@ class BlogController extends Controller
         return view('admin.blogs.edit', compact('blog', 'contents'));
     }
 
-    public function update(Request $request, Blog $blog)
+    public function update(BlogUpdateRequest $request, Blog $blog)
     {
-        $request->validate([
-            'title'              => 'required|string|max:255',
-            'main_image_data'    => 'nullable|string',
-            'section_titles'     => 'required|array|min:1',
-            'section_titles.*'   => 'required|string|max:255',
-            'section_contents'   => 'required|array|min:1',
-            'section_contents.*' => 'required|string',
-        ]);
-
         try {
             DB::beginTransaction();
 
