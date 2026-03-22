@@ -6,204 +6,328 @@
 @endsection
 
 @section('title', 'Create Product')
+
 @section('style')
 <style>
     .image-preview-item { display: inline-block; margin: 5px; position: relative; }
     .image-preview-item img { border: 1px solid #ddd; border-radius: 4px; }
-    .image-preview-item .remove-image-btn { position: absolute; top: -5px; right: -5px; border-radius: 50%; width: 20px; height: 20px; padding: 0; font-size: 10px; }
+    .image-preview-item .remove-image-btn {
+        position: absolute; top: -5px; right: -5px;
+        border-radius: 50%; width: 20px; height: 20px;
+        padding: 0; font-size: 10px;
+    }
+    .form-switch-lg .form-check-input {
+        width: 60px;
+        height: 32px;
+        cursor: pointer;
+    }
+
+    .form-switch-lg .form-check-input:checked {
+        background-color: #0d6efd;
+        border-color: #0d6efd;
+    }
+
+    .form-switch-lg .form-check-input::before {
+        width: 28px;
+        height: 28px;
+    }
 </style>
 @endsection
 
 @section('content')
-    <div class="d-flex justify-content-center mb-4">
-        <div class="col-md-8">
-            <div class="card">
-                <div class="card-body">
-                    <h1 class="card-title h4 d-flex align-items-center gap-2 mb-4">
-                        Create New Product
-                    </h1>
+<div class="d-flex justify-content-center mb-4">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-body">
 
-                    @if ($errors->any())
-                        <div class="alert alert-danger">
-                            <ul class="mb-0">
-                                @foreach ($errors->all() as $error)
-                                    <li>{{ $error }}</li>
-                                @endforeach
-                            </ul>
-                        </div>
-                    @endif
+                <h1 class="card-title h4 mb-4">Add New Product</h1>
 
-                    <form id="create-product-form" action="{{ route('admin.product.store') }}" method="POST" enctype="multipart/form-data">
-                        @csrf
+                @if ($errors->any())
+                    <div class="alert alert-danger">
+                        <ul class="mb-0">
+                            @foreach ($errors->all() as $error)
+                                <li>{{ $error }}</li>
+                            @endforeach
+                        </ul>
+                    </div>
+                @endif
+
+                <form id="create-product-form" action="{{ route('admin.product.store') }}" method="POST" enctype="multipart/form-data">
+                    @csrf
+
+                    <div class="row">
+                        {{-- SWITCH --}}
+                        <div class="col-md-6">
+                            <div class="form-group mb-3">
+                                <label class="d-block">Product Type <span class="text-danger">*</span></label>
+
+                                <div class="d-flex align-items-center gap-3 mt-2">
+                                    <span class="text-muted fw-semibold">New</span>
+
+                                    <div class="form-check form-switch form-switch-lg m-0">
+                                        <input class="form-check-input" type="checkbox" id="product_type_switch">
+                                    </div>
+
+                                    <span class="text-muted fw-semibold">Second Hand</span>
+                                </div>
+
+                                <input type="hidden" name="product_type" id="product_type" value="new">
+                            </div>
+                        </div>
+
+                        {{-- Phone Model --}}
+                        <div class="col-md-6">
+                            <div class="form-group mb-3">
+                                <label>Phone Model <span class="text-danger">*</span></label>
+                                <select class="form-control" name="phone_model_id" required>
+                                    <option value="">Select Phone Model</option>
+                                    @foreach ($phoneModels as $pm)
+                                        <option value="{{ $pm->id }}">
+                                            {{ $pm->model_name }} ({{ $pm->brand->brand_name ?? '-' }})
+                                        </option>
+                                    @endforeach
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group mb-3">
+                                <label>Selling Price <span class="text-danger">*</span></label>
+                                <input type="number" step="0.01" name="selling_price" class="form-control" placeholder="0.00" required>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group mb-3">
+                                <label>Warranty (months)</label>
+                                <input type="number" name="warranty_month" class="form-control" placeholder="Optional">
+                            </div>
+                        </div>
+                    </div>
+
+                    {{-- NEW DEVICE --}}
+                    <div id="new-device-section">
+                        <h5 class="mt-3">New Device </h5>
+
+                        <div class="mt-3 form-group">
+                            <label>Stock Quantity</label>
+                            <input type="number" name="stock_quantity" class="form-control" value="0">
+                            <small class="text-muted">Increase to add more placeholder devices. Edit each device to add IMEI and details.</small>
+                        </div>
+                    </div>
+
+                    {{-- SECOND HAND --}}
+                    <div id="second-hand-section" style="display:none;">
+                        <h5 class="mt-3">Second Hand Device </h5>
+
                         <div class="row">
                             <div class="col-md-6">
-                                <div class="form-group mb-3">
-                                    <label for="phone_model_id" class="form-label">Phone Model <span class="text-danger fs-5">*</span></label>
-                                    <select class="form-control" id="phone_model_id" name="phone_model_id" required>
-                                        <option value="">Select Phone Model</option>
-                                        @foreach ($phoneModels as $pm)
-                                            <option value="{{ $pm->id }}" {{ old('phone_model_id') == $pm->id ? 'selected' : '' }}>
-                                                {{ $pm->model_name }} ({{ $pm->brand->brand_name ?? '-' }})
-                                            </option>
-                                        @endforeach
-                                    </select>
-                                </div>
+                                <label>IMEI *</label>
+                                <input type="text" name="imei" class="form-control">
                             </div>
+
                             <div class="col-md-6">
-                                <div class="form-group mb-3">
-                                    <label for="product_type" class="form-label">Product Type <span class="text-danger fs-5">*</span></label>
-                                    <select class="form-control" id="product_type" name="product_type" required>
-                                        <option value="">Select Type</option>
-                                        <option value="new" {{ old('product_type') == 'new' ? 'selected' : '' }}>New</option>
-                                        <option value="second hand" {{ old('product_type') == 'second hand' ? 'selected' : '' }}>Second Hand</option>
-                                    </select>
+                                <label>RAM *</label>
+                                <input type="text" name="ram" class="form-control">
+                            </div>
+
+                            <div class="col-md-6 mt-3">
+                                <label>Storage *</label>
+                                <input type="text" name="storage" class="form-control">
+                            </div>
+
+                            <div class="col-md-6 mt-3">
+                                <label for="color" class="form-label">Color <span class="text-danger">*</span></label>
+                                <div class="d-flex align-items-center gap-2">
+                                    <input type="color" class="form-control form-control-color" id="color_picker" value="#000000" style="width: 60px; height: 38px;">
+                                    <input type="text" class="form-control" id="color_code" placeholder="#000000" style="max-width: 150px;">
                                 </div>
+                                <input type="hidden" name="color" id="color_hidden" value="#000000">
+                            </div>
+
+                            <div class="col-md-6 mt-3">
+                                <label>Condition Grade *</label>
+                                <select name="condition_grade" class="form-control">
+                                    <option value="A">A (Like New)</option>
+                                    <option value="B">B (Good)</option>
+                                    <option value="C">C (Used)</option>
+                                </select>
+                            </div>
+
+                            <div class="col-md-6 mt-3">
+                                <label>Battery (%) *</label>
+                                <input type="number" name="battery_percentage" class="form-control">
+                            </div>
+
+                            <div class="col-md-6 mt-3">
+                                <label>Buy Price *</label>
+                                <input type="number" step="0.01" name="buy_price" class="form-control">
+                            </div>
+
+                            <div class="col-md-6 mt-3">
+                                <label>Purchase Date *</label>
+                                <input type="datetime-local" name="purchase_at" class="form-control">
                             </div>
                         </div>
-                        <div class="row">
-                            <div class="col-md-6">
-                                <div class="form-group mb-3">
-                                    <label for="selling_price" class="form-label">Selling Price <span class="text-danger fs-5">*</span></label>
-                                    <input type="number" step="0.01" class="form-control" id="selling_price" name="selling_price"
-                                        placeholder="0.00" value="{{ old('selling_price') }}" required>
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="form-group mb-3">
-                                    <label for="warranty_month" class="form-label">Warranty (months)</label>
-                                    <input type="number" class="form-control" id="warranty_month" name="warranty_month"
-                                        placeholder="Optional" value="{{ old('warranty_month') }}" min="0">
-                                </div>
-                            </div>
-                        </div>
-                        <div class="row">
-                            <div class="col-md-6">
-                                <div class="form-group mb-3">
-                                    <label for="stock_quantity" class="form-label">Stock Quantity</label>
-                                    <input type="number" class="form-control" id="stock_quantity" name="stock_quantity"
-                                        placeholder="e.g. 30" value="{{ old('stock_quantity', 0) }}" min="0">
-                                    <small class="text-muted">Creates one device record per unit. Edit each device later to add IMEI, RAM, storage, color, etc.</small>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="form-group mb-3">
-                            <label for="description" class="form-label">Description</label>
-                            <textarea class="form-control" id="description" name="description" rows="3" placeholder="Product description">{{ old('description') }}</textarea>
-                        </div>
-                        <div class="form-group mb-3">
-                            <label for="image-input" class="form-label">Images</label>
-                            <input type="file" class="form-control" id="image-input" accept="image/*" multiple>
-                            <div class="mt-2" id="image-preview-wrapper"></div>
-                        </div>
-                        <button type="submit" class="btn btn-primary mt-3">Create Product</button>
-                        <a href="{{ route('admin.product.index') }}" class="btn btn-secondary mt-3">Cancel</a>
-                    </form>
-                </div>
+                    </div>
+
+                    {{-- DESCRIPTION --}}
+                    <div class="mt-3">
+                        <label>Description</label>
+                        <textarea name="description" class="form-control"></textarea>
+                    </div>
+
+                    {{-- IMAGE --}}
+                    <div class="mt-3">
+                        <label>Images</label>
+                        <input type="file" id="image-input" class="form-control" multiple>
+                        <div id="image-preview-wrapper" class="mt-2"></div>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary mt-3">Create Product</button>
+                    <a href="{{ route('admin.product.index') }}" class="btn btn-secondary mt-3">Cancel</a>
+
+                </form>
             </div>
         </div>
     </div>
+</div>
 
-    <!-- Cropper Modal -->
-    <div class="modal fade" id="cropper-modal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1">
-        <div class="modal-dialog modal-dialog-scrollable modal-lg">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">Crop Image</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                </div>
-                <div class="modal-body">
-                    <img id="cropper-image" src="" alt="Crop" style="max-width: 100%;">
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <button type="button" class="btn btn-primary" id="crop-button">Crop</button>
-                </div>
+{{-- CROPPER MODAL --}}
+<div class="modal fade" id="cropper-modal">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5>Crop Image</h5>
+                <button class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <img id="cropper-image" style="max-width:100%;">
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-primary" id="crop-button">Crop</button>
             </div>
         </div>
     </div>
+</div>
 @endsection
 
 @section('script')
 <script>
-    $(document).ready(function () {
-        let cropper;
-        let cropperModal = new bootstrap.Modal(document.getElementById('cropper-modal'));
-        const cropperImage = document.getElementById('cropper-image');
-        let currentFile;
+$(function () {
 
-        $('#image-input').on('change', function(e) {
-            const files = e.target.files;
-            if (files && files.length > 0) {
-                Array.from(files).forEach((file, index) => {
-                    const reader = new FileReader();
-                    reader.onload = function(e) {
-                        cropperImage.src = e.target.result;
-                        cropperModal.show();
-                    };
-                    reader.readAsDataURL(file);
-                });
-            }
-        });
-
-        if (document.getElementById('cropper-modal')) {
-            $('#cropper-modal').on('shown.bs.modal', function() {
-                cropper = new Cropper(cropperImage, { aspectRatio: 1, viewMode: 1 });
-            }).on('hidden.bs.modal', function() {
-                if (cropper) { cropper.destroy(); cropper = null; }
-            });
+    // SWITCH
+    $('#product_type_switch').on('change', function () {
+        if ($(this).is(':checked')) {
+            $('#product_type').val('second hand');
+            $('#switch-label').text('Second Hand Device');
+            $('#new-device-section').hide();
+            $('#second-hand-section').show();
+        } else {
+            $('#product_type').val('new');
+            $('#switch-label').text('New Device');
+            $('#new-device-section').show();
+            $('#second-hand-section').hide();
         }
+    });
 
-        $('#crop-button').on('click', function() {
-            if (!cropper) return;
-            const canvas = cropper.getCroppedCanvas({ width: 600, height: 600 });
-            canvas.toBlob(function(blob) {
-                const reader = new FileReader();
-                reader.readAsDataURL(blob);
-                reader.onloadend = function() {
-                    const base64data = reader.result;
-                    $('#image-preview-wrapper').append(`
-                        <div class="image-preview-item">
-                            <img src="${base64data}" width="100">
-                            <input type="hidden" name="image[]" value="${base64data}">
-                            <button type="button" class="btn btn-danger btn-sm remove-image-btn"><i class="fa-solid fa-xmark"></i></button>
-                        </div>
-                    `);
-                    cropperModal.hide();
-                    
-                    // Reset file input
-                    $('#image-input').val('');
-                };
-            }, 'image/jpeg');
-        });
+    // IMAGE CROPPER
+    let cropper;
+    let modal = new bootstrap.Modal(document.getElementById('cropper-modal'));
+    let image = document.getElementById('cropper-image');
 
-        $('#image-preview-wrapper').on('click', '.remove-image-btn', function() {
-            $(this).closest('.image-preview-item').remove();
-        });
+    $('#image-input').on('change', function(e) {
+        let file = e.target.files[0];
+        let reader = new FileReader();
 
-        $('#create-product-form').on('submit', function(e) {
-            e.preventDefault();
-            let formData = new FormData(this);
-            $.ajax({
-                url: $(this).attr('action'),
-                method: 'POST',
-                data: formData,
-                processData: false,
-                contentType: false,
-                success: function(response) {
-                    Swal.fire({ icon: 'success', title: 'Success', text: response.message }).then(() => {
-                        window.location.href = "{{ route('admin.product.index') }}";
-                    });
-                },
-                error: function(xhr) {
-                    let errors = xhr.responseJSON?.errors;
-                    let msg = xhr.responseJSON?.message || 'Something went wrong';
-                    if (errors) {
-                        msg = Object.values(errors).flat().join('<br>');
-                    }
-                    Swal.fire({ icon: 'error', title: 'Error', html: msg });
-                }
-            });
+        reader.onload = function(e) {
+            image.src = e.target.result;
+            modal.show();
+        };
+
+        reader.readAsDataURL(file);
+    });
+
+    $('#cropper-modal').on('shown.bs.modal', function() {
+        cropper = new Cropper(image, { aspectRatio: 1 });
+    }).on('hidden.bs.modal', function() {
+        cropper.destroy();
+    });
+
+    $('#crop-button').click(function() {
+        let canvas = cropper.getCroppedCanvas({ width: 600, height: 600 });
+
+        canvas.toBlob(function(blob) {
+            let reader = new FileReader();
+            reader.readAsDataURL(blob);
+
+            reader.onloadend = function () {
+                let base64 = reader.result;
+
+                $('#image-preview-wrapper').append(`
+                    <div class="image-preview-item">
+                        <img src="${base64}" width="100">
+                        <input type="hidden" name="image[]" value="${base64}">
+                        <button type="button" class="btn btn-danger btn-sm remove-image-btn">x</button>
+                    </div>
+                `);
+
+                modal.hide();
+                $('#image-input').val('');
+            };
         });
     });
+
+    $(document).on('click', '.remove-image-btn', function () {
+        $(this).parent().remove();
+    });
+
+    // COLOR PICKER SYNC
+    function isValidHex(hex) {
+        return /^#([0-9A-F]{3}){1,2}$/i.test(hex);
+    }
+
+    $('#color_picker').on('input', function () {
+        let color = $(this).val();
+        $('#color_code').val(color);
+        $('#color_hidden').val(color);
+    });
+
+    $('#color_code').on('input', function () {
+        let color = $(this).val();
+        if (isValidHex(color)) {
+            $('#color_picker').val(color);
+            $('#color_hidden').val(color);
+        }
+    });
+
+    // AJAX SUBMIT
+    $('#create-product-form').submit(function(e) {
+        e.preventDefault();
+
+        let formData = new FormData(this);
+
+        $.ajax({
+            url: $(this).attr('action'),
+            method: 'POST',
+            data: formData,
+            processData: false,
+            contentType: false,
+            success: function(res) {
+                Swal.fire('Success', res.message, 'success')
+                    .then(() => window.location.href = "{{ route('admin.product.index') }}");
+            },
+            error: function(xhr) {
+                let msg = 'Error';
+                if (xhr.responseJSON?.errors) {
+                    msg = Object.values(xhr.responseJSON.errors).flat().join('<br>');
+                }
+                Swal.fire('Error', msg, 'error');
+            }
+        });
+    });
+
+});
 </script>
 @endsection

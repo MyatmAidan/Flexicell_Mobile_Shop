@@ -17,7 +17,7 @@
                             Product List
                         </h1>
                         <a href="{{ route('admin.product.create') }}" class="btn btn-success">
-                            <i class="fas fa-plus"></i> Create New Product
+                            <i class="fas fa-plus"></i> Add New Product
                         </a>
                     </div>
                     <div class="">

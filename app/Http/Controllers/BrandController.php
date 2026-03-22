@@ -37,18 +37,25 @@ class BrandController extends Controller
 
     public function getList()
     {
-        $brands = Brands::all();
+        $brands = Brands::withCount('products')->get();
         return DataTables::of($brands)
             ->addColumn('plus-icon', function ($brand) {
                 return null;
             })
-            ->addIndexColumn()
             ->editColumn('logo', function ($brand) {
                 return '<img src="' . $brand->logoUrl() . '" alt="' . $brand->brand_name . '" class="img-thumbnail" style="width: 50px; height: 50px;">';
             })
             ->editColumn('color', function ($brand) {
                 $color = $brand->color ?? '#000000';
-                return '<div class="mx-auto" style="display:inline-block; width: 20px; height: 20px; background-color: ' . htmlspecialchars($color, ENT_QUOTES) . '; border-radius: 50%; border: 1px solid #ddd;" title="' . htmlspecialchars($color, ENT_QUOTES) . '"></div>';
+                return '<div class="mx-auto" style="display:inline-block; width: 25px; height: 25px; background-color: ' . htmlspecialchars($color, ENT_QUOTES) . '; border-radius: 50%; border: 1px solid #ddd;" title="' . htmlspecialchars($color, ENT_QUOTES) . '"></div>';
+            })
+            ->addColumn('products_count', function ($brand) {
+                return '<span class="badge bg-info">' . $brand->products_count . '</span>';
+            })
+            ->editColumn('created_at', function ($c) {
+                return $c->created_at
+                    ? $c->created_at->format('Y-m-d')
+                    : '-';
             })
             ->addColumn('action', function ($brand) {
                 $id = $brand->id;
@@ -58,7 +65,7 @@ class BrandController extends Controller
                 return '<div class="action-btn" role="group">' . $editBtn . ' ' . $deleteBtn . '</div>';
             })
 
-            ->rawColumns(['logo', 'action', 'plus-icon', 'color'])
+            ->rawColumns(['logo', 'action', 'plus-icon', 'color', 'products_count'])
             ->make(true);
     }
 

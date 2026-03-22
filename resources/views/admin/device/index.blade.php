@@ -24,7 +24,7 @@
                             Device List
                         </h1>
                         <a href="{{ route('admin.device.create') }}" class="btn btn-success">
-                            <i class="fas fa-plus"></i> Create New Device
+                            <i class="fas fa-plus"></i> Add New Device
                         </a>
                     </div>
                     <div class="">

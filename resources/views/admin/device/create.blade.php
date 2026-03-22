@@ -74,12 +74,28 @@
                             </div>
                         </div>
                         <div class="row">
-                            <div class="col-md-6">
-                                <div class="form-group mb-3">
-                                    <label for="color" class="form-label">Color <span class="text-danger fs-5">*</span></label>
-                                    <input type="color" class="form-control form-control-color w-100" id="color" name="color"
-                                        value="{{ old('color', '#000000') }}" required>
+                            <div class="form-group mb-3">
+                                <label for="color" class="form-label">
+                                    Color <span class="text-danger fs-5">*</span>
+                                </label>
+
+                                <div class="d-flex align-items-center gap-2">
+                                    <input type="color"
+                                        class="form-control form-control-color"
+                                        id="color"
+                                        value="{{ old('color', '#000000') }}"
+                                        style="width: 60px; height: 40px;"
+                                    >
+
+                                    <input type="text"
+                                        class="form-control"
+                                        id="color_code"
+                                        placeholder="#000000"
+                                        style="max-width: 150px;"
+                                    >
                                 </div>
+
+                                <input type="hidden" name="color" id="color_hidden" value="{{ old('color', '#000000') }}">
                             </div>
                             <div class="col-md-6">
                                 <div class="form-group mb-3">
@@ -214,6 +230,28 @@
 
         $('#image-preview-wrapper').on('click', '.remove-image-btn', function() {
             $(this).closest('.image-preview-item').remove();
+        });
+
+        // COLOR PICKER SYNC
+        function isValidHex(hex) {
+            return /^#([0-9A-F]{3}){1,2}$/i.test(hex);
+        }
+
+        // When picker changes
+        $('#color').on('input', function () {
+            let color = $(this).val();
+            $('#color_code').val(color);
+            $('#color_hidden').val(color);
+        });
+
+        // When user types manually
+        $('#color_code').on('input', function () {
+            let color = $(this).val();
+
+            if (isValidHex(color)) {
+                $('#color').val(color);
+                $('#color_hidden').val(color);
+            }
         });
 
         $('#create-device-form').on('submit', function(e) {

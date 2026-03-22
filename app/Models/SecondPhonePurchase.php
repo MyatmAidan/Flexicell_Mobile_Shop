@@ -8,6 +8,10 @@ class SecondPhonePurchase extends Model
 {
     protected $guarded = ['id'];
 
+    protected $casts = [
+        'image' => 'array',
+    ];
+
     protected $dates = ['purchase_at'];
 
     public function user()

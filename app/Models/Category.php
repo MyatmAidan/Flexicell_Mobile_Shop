@@ -10,6 +10,11 @@ class Category extends Model
 
     function Phone_models()
     {
-        return $this->hasMany(Phone_model::class);
+        return $this->hasMany(Phone_model::class, 'category_id');
+    }
+
+    public function products()
+    {
+        return $this->hasManyThrough(Product::class, Phone_model::class, 'category_id', 'phone_model_id');
     }
 }

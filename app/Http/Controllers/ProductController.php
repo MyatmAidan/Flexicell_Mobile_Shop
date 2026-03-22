@@ -9,6 +9,8 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use App\Http\Requests\ProductCreateRequest;
 use App\Http\Requests\ProductUpdateRequest;
+use App\Models\User;
+use App\Models\SecondPhonePurchase;
 use Yajra\DataTables\Facades\DataTables;
 
 class ProductController extends Controller
@@ -77,54 +79,104 @@ class ProductController extends Controller
                         $filename = uniqid('product_') . '.' . $extension;
                         Storage::disk('public')->put('products/' . $filename, $decoded);
                         $imageFiles[] = $filename;
-                    } elseif (is_string($img) && !empty($img)) {
+                    } elseif (!empty($img)) {
                         $imageFiles[] = $img;
                     }
                 }
             }
 
-            $stockQuantity = (int) ($request->stock_quantity ?? 0);
+            $isSecondHand = $request->product_type === 'second hand';
 
-            $product = Product::create([
-                'phone_model_id' => $request->phone_model_id,
-                'product_type' => $request->product_type,
-                'selling_price' => $request->selling_price,
-                'warranty_month' => $request->warranty_month,
-                'image' => $imageFiles ?: null,
-                'description' => $request->description,
-                'stock_quantity' => $stockQuantity,
-            ]);
 
-            if ($stockQuantity > 0) {
-                $devices = [];
-                for ($i = 1; $i <= $stockQuantity; $i++) {
-                    $devices[] = [
-                        'product_id' => $product->id,
-                        'imei' => 'PENDING-' . $product->id . '-' . $i . '-' . uniqid(),
-                        'ram' => 'TBD',
-                        'storage' => 'TBD',
-                        'color' => 'TBD',
-                        'battery_percentage' => 0,
-                        'condition_grade' => 'TBD',
-                        'status' => 'available',
-                        'created_at' => now(),
-                        'updated_at' => now(),
-                    ];
+            $product = Product::where('phone_model_id', $request->phone_model_id)
+                ->where('product_type', $request->product_type)
+                ->first();
+
+            if ($product) {
+                $product->increment('stock_quantity', $isSecondHand ? 1 : ($request->stock_quantity ?? 0));
+            } else {
+                $product = Product::create([
+                    'phone_model_id' => $request->phone_model_id,
+                    'product_type' => $request->product_type,
+                    'warranty_month' => $request->warranty_month,
+                    'image' => $imageFiles ?: null,
+                    'description' => $request->description,
+                    'stock_quantity' => $isSecondHand ? 1 : ($request->stock_quantity ?? 0),
+                ]);
+            }
+
+
+            if ($isSecondHand) {
+
+                $purchase = SecondPhonePurchase::create([
+                    'user_id' => auth()->id(),
+                    'phone_model_id' => $request->phone_model_id,
+                    'imei' => $request->imei,
+                    'ram' => $request->ram,
+                    'storage' => $request->storage,
+                    'color' => $request->color,
+                    'image' => $imageFiles ?: null,
+                    'condition_grade' => $request->condition_grade,
+                    'battery_percentage' => $request->battery_percentage,
+                    'buy_price' => $request->buy_price,
+                    'purchase_at' => $request->purchase_at ?? now(),
+                ]);
+
+                Device::create([
+                    'product_id' => $product->id,
+                    'second_purchase_id' => $purchase->id,
+                    'imei' => $request->imei,
+                    'ram' => $request->ram,
+                    'storage' => $request->storage,
+                    'color' => $request->color,
+                    'battery_percentage' => $request->battery_percentage,
+                    'condition_grade' => $request->condition_grade,
+                    'status' => 'available',
+                    'purchase_price' => $request->buy_price,
+                    'selling_price' => $request->selling_price,
+                    'image' => $imageFiles ?: null,
+                ]);
+            } else {
+
+                $stockQuantity = (int) ($request->stock_quantity ?? 0);
+
+                if ($stockQuantity > 0) {
+                    $devices = [];
+
+                    for ($i = 1; $i <= $stockQuantity; $i++) {
+                        $devices[] = [
+                            'product_id' => $product->id,
+                            'imei' => 'PENDING-' . $product->id . '-' . $i . '-' . uniqid(),
+                            'ram' => 'TBD',
+                            'storage' => 'TBD',
+                            'color' => 'TBD',
+                            'battery_percentage' => 0,
+                            'condition_grade' => 'TBD',
+                            'status' => 'available',
+                            'selling_price' => $request->selling_price,
+                            'created_at' => now(),
+                            'updated_at' => now(),
+                        ];
+                    }
+
+                    Device::insert($devices);
                 }
-                Device::insert($devices);
             }
 
             DB::commit();
 
             return response()->json([
                 'status' => true,
-                'message' => 'Product created successfully with ' . $stockQuantity . ' device(s). You can edit each device to add IMEI and other details.',
+                'message' => $isSecondHand
+                    ? 'Second-hand device purchased and added to inventory.'
+                    : 'New product created with stock devices.',
             ]);
         } catch (\Exception $e) {
             DB::rollBack();
+
             return response()->json([
                 'status' => false,
-                'message' => 'Failed to create product: ' . $e->getMessage()
+                'message' => 'Error: ' . $e->getMessage()
             ], 500);
         }
     }

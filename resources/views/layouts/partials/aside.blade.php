@@ -30,6 +30,14 @@
                     <span class="hide-menu">Direct Sale</span>
                 </a>
             </li>
+            {{-- <li class="sidebar-item">
+                <a class="sidebar-link" href="{{ route('admin.second_hand_purchase.index') }}" aria-expanded="false">
+                    <span>
+                        <iconify-icon icon="solar:shop-2-bold-duotone" class="fs-6"></iconify-icon>
+                    </span>
+                    <span class="hide-menu">Second Hand</span>
+                </a>
+            </li> --}}
             <li class="sidebar-item">
                 <a class="sidebar-link" href="#" aria-expanded="false">
                     <span>

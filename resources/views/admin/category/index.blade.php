@@ -55,9 +55,9 @@
                             <thead>
                                 <tr>
                                     <th></th>
-                                    <th>#</th>
-                                    <th>Name</th>
                                     <th>Color</th>
+                                    <th>Name</th>
+                                    <th>Product Counts</th>
                                     <th>Created at</th>
                                     <th>Action</th>
                                 </tr>
@@ -175,20 +175,26 @@
                         searchable: false,
                     },
                     { 
-                        data: 'DT_RowIndex',
-                        orderable: false, 
-                        searchable: false 
+                        data: 'color', 
+                        name: 'color',
+                        className: 'text-center',
+                        orderable: false,
                     },
                     { 
                         data: 'category_name', 
-                        name: 'category_name'
+                        name: 'category_name',
+                        searchable: true
                     },
                     { 
-                        data: 'color', 
-                        name: 'color'
+                        data: 'products_count', 
+                        name: 'products_count',
+                        className: 'text-center',
+                        searchable: false
                     },
-                    {   data: 'created_at', 
+                    {   
+                        data: 'created_at', 
                         name: 'created_at',
+                        searchable: false
                     },
                     { 
                         data: 'action', 

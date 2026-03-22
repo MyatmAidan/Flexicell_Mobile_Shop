@@ -65,14 +65,16 @@ class CategoryController extends Controller
 
     public function getList()
     {
-        $categories = Category::query();
+        $categories = Category::withCount('products');
 
         return DataTables::of($categories)
             ->addColumn('plus-icon', fn() => null)
-            ->addIndexColumn()
             ->editColumn('color', function ($c) {
                 $color = $c->color ?? '#000000';
-                return '<div class="mx-auto" style="display:inline-block; width: 20px; height: 20px; background-color: ' . htmlspecialchars($color, ENT_QUOTES) . '; border-radius: 50%; border: 1px solid #ddd;" title="' . htmlspecialchars($color, ENT_QUOTES) . '"></div>';
+                return '<div class="mx-auto" style="display:inline-block; width: 25px; height: 25px; background-color: ' . htmlspecialchars($color, ENT_QUOTES) . '; border-radius: 50%; border: 1px solid #ddd;" title="' . htmlspecialchars($color, ENT_QUOTES) . '"></div>';
+            })
+            ->addColumn('products_count', function ($c) {
+                return '<span class="badge bg-info">' . $c->products_count . '</span>';
             })
             ->editColumn('created_at', function ($c) {
                 return $c->created_at
@@ -85,7 +87,7 @@ class CategoryController extends Controller
                 $deleteBtn = '<a href="#" class="btn btn-danger btn-sm px-3 py-2 delete-btn" data-id="' . $id . '" title="delete"><i class="fa fa-trash-alt"></i> </a>';
                 return '<div class="action-btn" role="group">' . $editBtn . ' ' . $deleteBtn . '</div>';
             })
-            ->rawColumns(['action', 'color'])
+            ->rawColumns(['action', 'color', 'products_count'])
             ->make(true);
     }
 

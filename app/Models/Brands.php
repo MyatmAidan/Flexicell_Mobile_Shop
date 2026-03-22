@@ -10,7 +10,12 @@ class Brands extends Model
 
     public function phone_model()
     {
-        return $this->hasMany(Phone_model::class);
+        return $this->hasMany(Phone_model::class, 'brand_id');
+    }
+
+    public function products()
+    {
+        return $this->hasManyThrough(Product::class, Phone_model::class, 'brand_id', 'phone_model_id');
     }
     public function logoUrl()
     {
