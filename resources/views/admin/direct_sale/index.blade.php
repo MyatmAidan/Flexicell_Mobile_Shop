@@ -53,7 +53,7 @@
                 <div class="card-body">
                     <div class="d-flex justify-content-between align-items-center mb-2">
                         <h5 class="mb-0">Shopping Cart</h5>
-                        <button type="button" class="btn btn-sm btn-outline-danger" id="clearCartBtn">Clear</button>
+                        <button type="button" class="btn btn-md btn-outline-danger" id="clearCartBtn">Clear</button>
                     </div>
 
                     <div class="table-responsive pos-scroll">
@@ -80,13 +80,30 @@
                 <div class="card-body">
                     <h5 class="mb-3">Customer &amp; Payment</h5>
 
-                    <div class="mb-3">
-                        <label class="form-label">Customer Name</label>
-                        <input type="text" id="customerName" class="form-control" placeholder="Optional">
+                    <div class="row g-2 mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label">Customer Name</label>
+                            <input type="text" id="customerName" class="form-control" placeholder="Required" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Customer Phone</label>
+                            <input type="text" id="customerPhone" class="form-control" placeholder="Optional">
+                        </div>
                     </div>
-                    <div class="mb-3">
-                        <label class="form-label">Customer Phone</label>
-                        <input type="text" id="customerPhone" class="form-control" placeholder="Optional">
+                    <div id="customerExtendedInfo" style="display:none;">
+                        <div class="mb-3">
+                            <label class="form-label">Customer NRC</label>
+                            <input type="text" id="customerNRC" class="form-control" placeholder="Required for installments">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Customer Address</label>
+                            <textarea id="customerAddress" class="form-control" rows="2" placeholder="Optional"></textarea>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Attachments (NRC, Documents...)</label>
+                            <input type="file" id="customerAttachments" class="form-control" multiple>
+                            <small class="text-muted">Max 5MB per file. Formats: jpg, png, pdf.</small>
+                        </div>
                     </div>
 
                     <div class="mb-2">
@@ -218,7 +235,7 @@
                         <td><input type="number" class="form-control form-control-sm price-input" data-idx="${idx}" min="0" step="0.01" value="${l.unit_price}"></td>
                         <td><input type="number" class="form-control form-control-sm disc-input" data-idx="${idx}" min="0" step="0.01" value="${l.discount_price}"></td>
                         <td class="fw-semibold">${money(lineTotal)}</td>
-                        <td><button class="btn btn-sm btn-outline-danger remove-line-btn" data-idx="${idx}"><i class="fa fa-trash"></i></button></td>
+                        <td><button class="btn btn-md btn-outline-danger remove-line-btn" data-idx="${idx}"><i class="fa fa-trash"></i></button></td>
                     </tr>
                 `);
             });
@@ -290,7 +307,7 @@
                             ? `Stock: <span class="fw-semibold">${p.stock_quantity}</span>`
                             : `Devices: <span class="fw-semibold">${p.available_devices}</span>`;
                         const addBtn = isNew
-                            ? `<button class="btn btn-sm btn-primary w-100 add-qty-btn" data-product-id="${p.id}">Add</button>`
+                            ? `<button class="btn btn-md btn-primary w-100 add-qty-btn" data-product-id="${p.id}">Add</button>`
                             : `<span class="badge bg-warning w-100">IMEI Only</span>`;
 
                         const imgHtml = p.image
@@ -394,8 +411,13 @@
         // Installment UI
         $('input[name="paymentType"]').on('change', function() {
             const type = $('input[name="paymentType"]:checked').val();
-            if (type === 'installment') $('#installmentBox').show();
-            else $('#installmentBox').hide();
+            if (type === 'installment') {
+                $('#installmentBox').show();
+                $('#customerExtendedInfo').show();
+            } else {
+                $('#installmentBox').hide();
+                $('#customerExtendedInfo').hide();
+            }
             calcTotals();
         });
         $('#installmentRate, #downPayment').on('change input', function() {
@@ -422,26 +444,48 @@
                 return;
             }
 
-            const totals = calcTotals();
             const payment_type = $('input[name="paymentType"]:checked').val();
+            const customer_name = $('#customerName').val().trim();
+            if (!customer_name) {
+                Swal.fire({ icon: 'warning', title: 'Name required', text: 'Customer name is required for the receipt.' });
+                return;
+            }
 
-            const payload = {
-                items: cart.map(l => ({
-                    product_id: l.product_id,
-                    quantity: l.device_id ? 1 : l.quantity,
-                    device_id: l.device_id || null,
-                    imei: l.imei || null,
-                    unit_price: Number(l.unit_price),
-                    discount_price: Number(l.discount_price || 0),
-                })),
-                customer_name: $('#customerName').val(),
-                customer_phone: $('#customerPhone').val(),
-                payment_type,
-                installment_rate_id: payment_type === 'installment' ? ($('#installmentRate').val() || null) : null,
-                down_payment: payment_type === 'installment' ? Number($('#downPayment').val() || 0) : null,
-            };
+            const formData = new FormData();
+            
+            // Items
+            cart.forEach((l, i) => {
+                formData.append(`items[${i}][product_id]`, l.product_id);
+                formData.append(`items[${i}][quantity]`, l.device_id ? 1 : l.quantity);
+                if (l.device_id) formData.append(`items[${i}][device_id]`, l.device_id);
+                if (l.imei) formData.append(`items[${i}][imei]`, l.imei);
+                formData.append(`items[${i}][unit_price]`, Number(l.unit_price));
+                formData.append(`items[${i}][discount_price]`, Number(l.discount_price || 0));
+            });
 
-            if (payment_type === 'installment' && !payload.installment_rate_id) {
+            formData.append('customer_name', customer_name);
+            formData.append('customer_phone', $('#customerPhone').val());
+            formData.append('customer_nrc', $('#customerNRC').val());
+            formData.append('customer_address', $('#customerAddress').val());
+            formData.append('payment_type', payment_type);
+
+            if (payment_type === 'installment' && !$('#customerNRC').val().trim()) {
+                Swal.fire({ icon: 'warning', title: 'NRC required', text: 'NRC is required for installment sales.' });
+                return;
+            }
+
+            if (payment_type === 'installment') {
+                formData.append('installment_rate_id', $('#installmentRate').val() || '');
+                formData.append('down_payment', Number($('#downPayment').val() || 0));
+            }
+
+            // Attachments
+            const files = $('#customerAttachments')[0].files;
+            for (let i = 0; i < files.length; i++) {
+                formData.append('attachments[]', files[i]);
+            }
+
+            if (payment_type === 'installment' && !$('#installmentRate').val()) {
                 Swal.fire({ icon: 'warning', title: 'Missing plan', text: 'Please select an installment plan.' });
                 return;
             }
@@ -451,21 +495,12 @@
                 url: urls.checkout,
                 method: 'POST',
                 headers: { 'X-CSRF-TOKEN': csrf },
-                contentType: 'application/json',
-                data: JSON.stringify(payload),
+                processData: false,
+                contentType: false,
+                data: formData,
                 success: function(res) {
-                    Swal.fire({
-                        icon: 'success',
-                        title: 'Success',
-                        text: res.message || 'Checkout completed.'
-                    });
-                    cart = [];
-                    renderCart();
-                    $('#customerName').val('');
-                    $('#customerPhone').val('');
-                    $('#payCash').prop('checked', true).trigger('change');
-                    $('#installmentRate').val('');
-                    $('#downPayment').val(0);
+                    const receiptUrl = "{{ route('admin.order.receipt', ':id') }}?print=1".replace(':id', res.data.order_id);
+                    window.location.href = receiptUrl;
                 },
                 error: function(xhr) {
                     let msg = xhr.responseJSON?.message || 'Checkout failed.';

@@ -8,7 +8,9 @@ class Installment extends Model
 {
     protected $guarded = ['id'];
 
-    protected $dates = ['start_date'];
+    protected $casts = [
+        'start_date' => 'date',
+    ];
 
     public function order()
     {

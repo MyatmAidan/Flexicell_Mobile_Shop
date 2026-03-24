@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\DirectSaleCheckoutRequest;
+use App\Models\Customer;
 use App\Models\Device;
 use App\Models\Installment;
 use App\Models\InstallmentPayment;
@@ -107,7 +108,7 @@ class DirectSaleController extends Controller
         $payload = $request->validated();
         $userId = Auth::id();
 
-        $result = DB::transaction(function () use ($payload, $userId) {
+        $result = DB::transaction(function () use ($payload, $userId, $request) {
             $items = $payload['items'];
             $paymentType = $payload['payment_type'];
 
@@ -240,19 +241,37 @@ class DirectSaleController extends Controller
 
             $grandTotal = max(0, $totalAmount - $discountAmount);
 
+            $customer = null;
+            if (!empty($payload['customer_name'])) {
+                $attachments = [];
+                if ($request->hasFile('attachments')) {
+                    foreach ($request->file('attachments') as $file) {
+                        $path = $file->store('customer_attachments', 'public');
+                        $attachments[] = $path;
+                    }
+                }
+
+                $customer = Customer::create([
+                    'name' => $payload['customer_name'],
+                    'phone' => $payload['customer_phone'] ?? null,
+                    'nrc' => $payload['customer_nrc'] ?? null,
+                    'address' => $payload['customer_address'] ?? null,
+                    'attachments' => $attachments,
+                ]);
+            }
+
             $orderStatus = $paymentType === 'installment' ? 'installment' : 'completed';
 
             $order = Order::create([
                 'user_id' => $userId,
+                'customer_id' => $customer?->id,
                 'total_amount' => $totalAmount,
                 'discount_amount' => $discountAmount,
                 'tax_amount' => 0,
                 'shipping_amount' => 0,
                 'grand_total' => $grandTotal,
                 'order_status' => $orderStatus,
-                'shipping_address' => !empty($payload['customer_name']) || !empty($payload['customer_phone'])
-                    ? ('Name: ' . ($payload['customer_name'] ?? '-') . ' | Phone: ' . ($payload['customer_phone'] ?? '-'))
-                    : null,
+                'shipping_address' => $payload['customer_address'] ?? null,
                 'order_date' => now(),
                 'delivered_at' => null,
                 'status' => 'active',
@@ -315,9 +334,19 @@ class DirectSaleController extends Controller
                 if ($downPayment > 0) {
                     InstallmentPayment::create([
                         'installment_id' => $installment->id,
-                        'paid_amount' => $downPayment,
-                        'status' => 'paid',
-                        'paid_date' => now()->toDateString(),
+                        'paid_amount'    => $downPayment,
+                        'status'         => 'paid',
+                        'paid_date'      => now()->toDateString(),
+                    ]);
+                }
+
+                // Generate monthly payment schedule rows
+                for ($i = 1; $i <= $months; $i++) {
+                    InstallmentPayment::create([
+                        'installment_id' => $installment->id,
+                        'paid_amount'    => round($monthly, 2),
+                        'status'         => 'pending',
+                        'paid_date'      => now()->addMonths($i)->toDateString(),
                     ]);
                 }
             }

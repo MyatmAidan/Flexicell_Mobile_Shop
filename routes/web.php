@@ -11,6 +11,9 @@ use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\DeviceController;
 use App\Http\Controllers\DirectSaleController;
+use App\Http\Controllers\InstallmentController;
+use App\Http\Controllers\OrderController;
+use App\Http\Controllers\InstallmentRateController;
 use App\Http\Controllers\PhoneModelController;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\UserController;
@@ -31,6 +34,11 @@ Route::get('/', function () {
 
     return view('index', compact('categories', 'new_products', 'popular_products', 'best_sellers'));
 })->name('home');
+
+Route::get('/products', function () {
+    $categories = Category::all();
+    return view('products', compact('categories'));
+})->name('products');
 
 Route::get('/about', function () {
     $categories = Category::all();
@@ -190,12 +198,39 @@ Route::middleware(['authCheck', 'adminAuth'])->name('admin.')->group(function ()
             Route::delete('/{phoneModel}', [PhoneModelController::class, 'destroy'])->name('phone_model.destroy');
         });
 
+        //installment_rate plan routes
+        Route::prefix('installment_rate')->group(function () {
+            Route::get('/', [InstallmentRateController::class, 'index'])->name('installment_rate.index');
+            Route::get('/list', [InstallmentRateController::class, 'getList'])->name('installment_rate.getList');
+            Route::get('/create', [InstallmentRateController::class, 'create'])->name('installment_rate.create');
+            Route::post('/', [InstallmentRateController::class, 'store'])->name('installment_rate.store');
+            Route::get('/edit/{id}', [InstallmentRateController::class, 'edit'])->name('installment_rate.edit');
+            Route::put('/update/{id}', [InstallmentRateController::class, 'update'])->name('installment_rate.update');
+            Route::delete('/{installment_rate}', [InstallmentRateController::class, 'destroy'])->name('installment_rate.destroy');
+        });
+
         //direct sale (POS checkout)
         Route::prefix('direct-sale')->group(function () {
             Route::get('/', [DirectSaleController::class, 'index'])->name('direct_sale.index');
             Route::get('/products', [DirectSaleController::class, 'searchProducts'])->name('direct_sale.products');
             Route::get('/devices', [DirectSaleController::class, 'searchDevices'])->name('direct_sale.devices');
             Route::post('/checkout', [DirectSaleController::class, 'checkout'])->name('direct_sale.checkout');
+        });
+
+        // order routes
+        Route::prefix('order')->group(function () {
+            Route::get('/', [OrderController::class, 'index'])->name('order.index');
+            Route::get('/list', [OrderController::class, 'getList'])->name('order.getList');
+            Route::get('/{id}', [OrderController::class, 'show'])->name('order.show');
+            Route::get('/{id}/receipt', [OrderController::class, 'receipt'])->name('order.receipt');
+        });
+
+        // installment routes
+        Route::prefix('installment')->group(function () {
+            Route::get('/', [InstallmentController::class, 'index'])->name('installment.index');
+            Route::get('/list', [InstallmentController::class, 'getList'])->name('installment.getList');
+            Route::post('/payment/{paymentId}/mark-paid', [InstallmentController::class, 'markPaid'])->name('installment.markPaid');
+            Route::get('/{id}', [InstallmentController::class, 'show'])->name('installment.show');
         });
 
         //blog routes

@@ -8,7 +8,9 @@ class InstallmentPayment extends Model
 {
     protected $guarded = ['id'];
 
-    protected $dates = ['paid_date'];
+    protected $casts = [
+        'paid_date' => 'date',
+    ];
 
     public function installment()
     {

@@ -23,6 +23,76 @@
     <link type="text/css" rel="stylesheet" href="{{ asset('css/style.css') }}" />
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css" />
     @yield('style')
+    <style>
+        /* Custom Dropdown Styling for Electro Theme */
+        #navigation .main-nav .dropdown:hover>.dropdown-menu {
+            display: block;
+            opacity: 1;
+            visibility: visible;
+            margin-top: 0;
+            transition: 0.3s all;
+        }
+
+        #navigation .main-nav .dropdown-menu {
+            display: none;
+            position: absolute;
+            background-color: #FFF;
+            min-width: 200px;
+            box-shadow: 0px 6px 12px rgba(0, 0, 0, 0.1);
+            border: none;
+            border-top: 3px solid #D10024;
+            border-radius: 0;
+            z-index: 1000;
+            padding: 10px 0;
+        }
+
+        #navigation .main-nav .dropdown-menu li {
+            display: block;
+            margin-left: 0 !important;
+        }
+
+        #navigation .main-nav .dropdown-menu li a {
+            padding: 10px 20px !important;
+            font-weight: 500;
+            color: #2B2D42 !important;
+            display: block;
+            transition: 0.2s all;
+            border-bottom: 1px solid #f1f1f1;
+            line-height: normal !important;
+            height: auto !important;
+            background: none !important;
+        }
+
+        #navigation .main-nav .dropdown-menu li:last-child a {
+            border-bottom: none;
+        }
+
+        #navigation .main-nav .dropdown-menu li a:hover {
+            color: #D10024 !important;
+            background-color: #FBFBFC !important;
+            padding-left: 25px !important;
+        }
+
+        /* Red underline animation for dropdown toggle */
+        #navigation .main-nav .dropdown>a:after {
+            content: "";
+            display: block;
+            width: 0%;
+            height: 2px;
+            background-color: #D10024;
+            transition: 0.2s all;
+        }
+
+        #navigation .main-nav .dropdown:hover>a:after,
+        #navigation .main-nav .dropdown.active>a:after {
+            width: 100%;
+        }
+
+        /* Adjustments for the dropdown toggle link */
+        .main-nav>li.dropdown>a {
+            padding: 20px 0px;
+        }
+    </style>
 </head>
 
 <body>
@@ -166,11 +236,20 @@
                 <ul class="main-nav nav navbar-nav">
                     <li class="{{ request()->routeIs('home') ? 'active' : '' }}"><a
                             href="{{ route('home') }}">Home</a></li>
-                        @foreach ($categories as $cat)
-                            <li class="{{ request()->input('category_id') == $cat->id ? 'active' : '' }}"><a
-                                href="{{ route('products.search', ['category_id' => $cat->id]) }}">{{ $cat->category_name }}</a>
-                            </li>
-                        @endforeach
+                    <li class="dropdown {{ request()->has('category_id') || request()->routeIs('products') ? 'active' : '' }}">
+                        <a class="dropdown-toggle" data-toggle="dropdown" href="{{ route('products') }}"
+                            aria-expanded="true" style="cursor: pointer;">
+                            Products <i class="fa fa-angle-down"></i>
+                        </a>
+                        <ul class="dropdown-menu">
+                            @foreach ($categories as $cat)
+                                <li class="{{ request()->input('category_id') == $cat->id ? 'active' : '' }}">
+                                    <a
+                                        href="{{ route('products.search', ['category_id' => $cat->id]) }}">{{ $cat->category_name }}</a>
+                                </li>
+                            @endforeach
+                        </ul>
+                    </li>
                             <li class="{{ request()->routeIs('trade_in') ? 'active' : '' }}"><a
                                     href="{{ route('trade_in') }}"> Trade-In</a></li>
                             <li class="{{ request()->routeIs('blogs.index') || request()->routeIs('blogs.show') ? 'active' : '' }}"><a

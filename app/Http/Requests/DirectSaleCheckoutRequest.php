@@ -25,6 +25,10 @@ class DirectSaleCheckoutRequest extends FormRequest
 
             'customer_name' => ['nullable', 'string', 'max:255'],
             'customer_phone' => ['nullable', 'string', 'max:50'],
+            'customer_nrc' => ['nullable', 'string', 'max:255'],
+            'customer_address' => ['nullable', 'string'],
+            'attachments' => ['nullable', 'array'],
+            'attachments.*' => ['file', 'mimes:jpg,jpeg,png,pdf', 'max:5120'], // Max 5MB per file
 
             'payment_type' => ['required', 'in:cash,installment'],
             'installment_rate_id' => ['nullable', 'integer'],

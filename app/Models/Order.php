@@ -9,7 +9,15 @@ class Order extends Model
 
     protected $guarded = ['id'];
 
-    protected $dates = ['order_date', 'delivered_at'];
+    protected $casts = [
+        'order_date' => 'datetime',
+        'delivered_at' => 'datetime',
+    ];
+
+    public function customer()
+    {
+        return $this->belongsTo(Customer::class);
+    }
 
     public function user()
     {

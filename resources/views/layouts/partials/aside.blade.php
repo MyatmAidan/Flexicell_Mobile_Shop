@@ -30,20 +30,20 @@
                     <span class="hide-menu">Direct Sale</span>
                 </a>
             </li>
-            {{-- <li class="sidebar-item">
-                <a class="sidebar-link" href="{{ route('admin.second_hand_purchase.index') }}" aria-expanded="false">
-                    <span>
-                        <iconify-icon icon="solar:shop-2-bold-duotone" class="fs-6"></iconify-icon>
-                    </span>
-                    <span class="hide-menu">Second Hand</span>
-                </a>
-            </li> --}}
             <li class="sidebar-item">
                 <a class="sidebar-link" href="#" aria-expanded="false">
                     <span>
                         <iconify-icon icon="solar:shop-2-bold-duotone" class="fs-6"></iconify-icon>
                     </span>
                     <span class="hide-menu">Trade In</span>
+                </a>
+            </li>
+            <li class="sidebar-item">
+                <a class="sidebar-link" href="{{ route('admin.blogs.index') }}" aria-expanded="false">
+                    <span>
+                        <iconify-icon icon="solar:document-text-bold-duotone" class="fs-6"></iconify-icon>
+                    </span>
+                    <span class="hide-menu">Blogs</span>
                 </a>
             </li>
             <li class="nav-small-cap">
@@ -102,17 +102,8 @@
                     <span class="hide-menu">Users</span>
                 </a>
             </li>
-            {{-- <li class="sidebar-item">
-                <a class="sidebar-link" href="" aria-expanded="false">
-                    {{ route('admin.customer.index') }}
-                    <span>
-                        <iconify-icon icon="solar:user-plus-bold-duotone" class="fs-6"></iconify-icon>
-                    </span>
-                    <span class="hide-menu">Customer</span>
-                </a>
-            </li> --}}
             <li class="sidebar-item">
-                <a class="sidebar-link" href="#" aria-expanded="false">
+                <a class="sidebar-link {{ request()->is('admin/order*') ? 'active' : '' }}" href="{{ route('admin.order.index') }}" aria-expanded="false">
                     <span>
                         <iconify-icon icon="solar:cart-large-minimalistic-bold-duotone" class="fs-6"></iconify-icon>
                     </span>
@@ -136,25 +127,25 @@
                 </a>
             </li> --}}
             <li class="sidebar-item">
-                <a class="sidebar-link" href="#" aria-expanded="false">
+                <a class="sidebar-link {{ request()->is('admin/installment') ? 'active' : '' }}" href="{{ route('admin.installment.index') }}" aria-expanded="false">
+                    <span>
+                        <iconify-icon icon="solar:bill-list-bold-duotone" class="fs-6"></iconify-icon>
+                    </span>
+                    <span class="hide-menu">Installment</span>
+                </a>
+            </li>
+            <li class="sidebar-item">
+                <a class="sidebar-link {{ request()->is('admin/installment_rate*') ? 'active' : '' }}" href="{{ route('admin.installment_rate.index') }}" aria-expanded="false">
                     <span>
                         <iconify-icon icon="solar:bill-list-bold-duotone" class="fs-6"></iconify-icon>
                     </span>
                     <span class="hide-menu">Installment Plan</span>
                 </a>
             </li>
-            <li class="nav-small-cap">
+            {{-- <li class="nav-small-cap">
                 <i class="ti ti-dots nav-small-cap-icon fs-6"></i>
                 <span class="hide-menu">Content</span>
-            </li>
-            <li class="sidebar-item">
-                <a class="sidebar-link" href="{{ route('admin.blogs.index') }}" aria-expanded="false">
-                    <span>
-                        <iconify-icon icon="solar:document-text-bold-duotone" class="fs-6"></iconify-icon>
-                    </span>
-                    <span class="hide-menu">Blogs</span>
-                </a>
-            </li>
+            </li> --}}
         </ul>
     </nav>
     <!-- End Sidebar navigation -->
