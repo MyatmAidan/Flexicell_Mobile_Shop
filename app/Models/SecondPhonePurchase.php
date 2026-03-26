@@ -23,4 +23,19 @@ class SecondPhonePurchase extends Model
     {
         return $this->belongsTo(Phone_model::class);
     }
+
+    public function ramOption()
+    {
+        return $this->belongsTo(RamOption::class, 'ram_option_id');
+    }
+
+    public function storageOption()
+    {
+        return $this->belongsTo(StorageOption::class, 'storage_option_id');
+    }
+
+    public function colorOption()
+    {
+        return $this->belongsTo(ColorOption::class, 'color_option_id');
+    }
 }

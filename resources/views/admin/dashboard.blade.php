@@ -75,19 +75,19 @@
             </div>
         </div>
 
-        <!-- Total Products -->
+        <!-- Available Devices -->
         <div class="col-lg-3 col-md-6">
             <div class="card">
                 <div class="card-body">
                     <div class="d-flex align-items-center">
                         <div class="flex-shrink-0">
-                            <i class="fas fa-mobile-alt fa-3x text-warning"></i>
+                            <i class="fas fa-boxes fa-3x text-warning"></i>
                         </div>
                         <div class="flex-grow-1 ms-3">
-                            <h5 class="card-title">Total Products</h5>
-                            <h3 class="mb-0">{{ number_format($totalProducts) }}</h3>
+                            <h5 class="card-title">Available Devices</h5>
+                            <h3 class="mb-0">{{ number_format($totalDevices) }}</h3>
                             <small class="text-muted">
-                                Active: {{ $activeProducts }} | Low Stock: {{ $lowStockProducts }}
+                                New: {{ $newDevices }} | 2nd Hand: {{ $secondHandDevices }}
                             </small>
                         </div>
                     </div>
@@ -181,8 +181,14 @@
                     <h5 class="card-title">System Overview</h5>
                     <div class="mb-3">
                         <div class="d-flex justify-content-between">
+                            <span>Phone Models</span>
+                            <span class="badge bg-primary">{{ $totalProducts }}</span>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <div class="d-flex justify-content-between">
                             <span>Categories</span>
-                            <span class="badge bg-primary">{{ $totalCategories }}</span>
+                            <span class="badge bg-secondary">{{ $totalCategories }}</span>
                         </div>
                     </div>
                     <div class="mb-3">

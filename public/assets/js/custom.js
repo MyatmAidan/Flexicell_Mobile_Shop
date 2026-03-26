@@ -44,4 +44,16 @@ $(document).ready(function () {
             },
         },
     });
-})
+    // Inline Color Toggles (Shared Modal)
+    $(document).on('click', '#modal-btn-toggle-new-color', function() {
+        $('#modal-existing-color-group').addClass('d-none');
+        $('#modal-new-color-group').removeClass('d-none');
+        $('#modal_color_option_id').val('');
+    });
+
+    $(document).on('click', '#modal-btn-cancel-new-color', function() {
+        $('#modal-new-color-group').addClass('d-none');
+        $('#modal-existing-color-group').removeClass('d-none');
+        $('#modal_new_color_name').val('');
+    });
+});

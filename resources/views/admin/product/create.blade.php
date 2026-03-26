@@ -129,21 +129,48 @@
 
                             <div class="col-md-6">
                                 <label>RAM *</label>
-                                <input type="text" name="ram" class="form-control">
+                                <select name="ram_option_id" class="form-control">
+                                    <option value="">Select RAM</option>
+                                    @foreach(($ramOptions ?? []) as $opt)
+                                        <option value="{{ $opt->id }}">{{ $opt->value }}</option>
+                                    @endforeach
+                                </select>
                             </div>
 
                             <div class="col-md-6 mt-3">
                                 <label>Storage *</label>
-                                <input type="text" name="storage" class="form-control">
+                                <select name="storage_option_id" class="form-control">
+                                    <option value="">Select Storage</option>
+                                    @foreach(($storageOptions ?? []) as $opt)
+                                        <option value="{{ $opt->id }}">{{ $opt->value }}</option>
+                                    @endforeach
+                                </select>
                             </div>
 
                             <div class="col-md-6 mt-3">
-                                <label for="color" class="form-label">Color <span class="text-danger">*</span></label>
-                                <div class="d-flex align-items-center gap-2">
-                                    <input type="color" class="form-control form-control-color" id="color_picker" value="#000000" style="width: 60px; height: 38px;">
-                                    <input type="text" class="form-control" id="color_code" placeholder="#000000" style="max-width: 150px;">
+                                <label class="form-label">Color <span class="text-danger">*</span></label>
+                                <div id="color-selection-wrapper">
+                                    <div class="d-flex gap-2 mb-1" id="existing-color-group">
+                                        <select name="color_option_id" id="color_option_id" class="form-control">
+                                            <option value="">Select Color</option>
+                                            @foreach(($colorOptions ?? []) as $opt)
+                                                <option value="{{ $opt->id }}">{{ $opt->name }}</option>
+                                            @endforeach
+                                        </select>
+                                        <button type="button" class="btn btn-outline-primary btn-sm whitespace-nowrap" id="btn-toggle-new-color" title="Add New Color">
+                                            <i class="fa fa-plus"></i> New
+                                        </button>
+                                    </div>
+                                    <div class="d-none" id="new-color-group">
+                                        <div class="d-flex gap-2">
+                                            <input type="text" class="form-control" id="new_color_name" name="new_color_name" placeholder="Color Name (e.g. Silver)">
+                                            <input type="color" class="form-control form-control-color" id="new_color_value" name="new_color_value" value="#000000" title="Choose a color" style="width: 60px; height: 38px;">
+                                            <button type="button" class="btn btn-outline-secondary btn-sm" id="btn-cancel-new-color" title="Cancel New Color">
+                                                <i class="fa fa-times"></i>
+                                            </button>
+                                        </div>
+                                    </div>
                                 </div>
-                                <input type="hidden" name="color" id="color_hidden" value="#000000">
                             </div>
 
                             <div class="col-md-6 mt-3">
@@ -185,8 +212,14 @@
                         <div id="image-preview-wrapper" class="mt-2"></div>
                     </div>
 
-                    <button type="submit" class="btn btn-primary mt-3">Create Product</button>
-                    <a href="{{ route('admin.product.index') }}" class="btn btn-secondary mt-3">Cancel</a>
+                    <div class="d-flex justify-content-end gap-2 mt-1 mb-3 me-3">
+                        <a href="{{ route('admin.product.index') }}" class="btn btn-secondary">
+                            Cancel
+                        </a>
+                        <button type="submit" class="btn btn-primary">
+                            Create Product
+                        </button>
+                    </div>
 
                 </form>
             </div>
@@ -283,24 +316,6 @@ $(function () {
         $(this).parent().remove();
     });
 
-    // COLOR PICKER SYNC
-    function isValidHex(hex) {
-        return /^#([0-9A-F]{3}){1,2}$/i.test(hex);
-    }
-
-    $('#color_picker').on('input', function () {
-        let color = $(this).val();
-        $('#color_code').val(color);
-        $('#color_hidden').val(color);
-    });
-
-    $('#color_code').on('input', function () {
-        let color = $(this).val();
-        if (isValidHex(color)) {
-            $('#color_picker').val(color);
-            $('#color_hidden').val(color);
-        }
-    });
 
     // AJAX SUBMIT
     $('#create-product-form').submit(function(e) {
@@ -328,6 +343,19 @@ $(function () {
         });
     });
 
-});
+        // JS logic to toggle between existing color selection and new color creation
+        $('#btn-toggle-new-color').on('click', function() {
+            $('#existing-color-group').addClass('d-none');
+            $('#new-color-group').removeClass('d-none');
+            $('#color_option_id').val('');
+        });
+
+        $('#btn-cancel-new-color').on('click', function() {
+            $('#new-color-group').addClass('d-none');
+            $('#existing-color-group').removeClass('d-none');
+            $('#new_color_name').val('');
+        });
+    });
 </script>
 @endsection
+```

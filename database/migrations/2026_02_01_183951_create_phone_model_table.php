@@ -17,7 +17,7 @@ return new class extends Migration
             $table->foreignId('category_id')->constrained()->cascadeOnDelete();
             $table->string('model_name');
             $table->string('processor')->nullable();
-            $table->json('color_options')->nullable();
+            $table->json('available_color')->nullable();
             $table->integer('battery_capacity')->nullable();
             $table->json('description')->nullable();
             $table->json('image')->nullable();

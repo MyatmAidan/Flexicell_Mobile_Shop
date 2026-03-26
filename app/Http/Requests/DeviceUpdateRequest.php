@@ -23,9 +23,11 @@ class DeviceUpdateRequest extends FormRequest
                 'string',
                 Rule::unique('devices', 'imei')->ignore($deviceId),
             ],
-            'ram' => 'required|string|max:50',
-            'storage' => 'required|string|max:50',
-            'color' => 'required|string|max:50',
+            'ram_option_id' => 'required|exists:ram_options,id',
+            'storage_option_id' => 'required|exists:storage_options,id',
+            'color_option_id' => 'required_without:new_color_name|nullable|exists:color_options,id',
+            'new_color_name' => 'nullable|string|max:255',
+            'new_color_value' => 'nullable|string|max:7',
             'battery_percentage' => 'required|integer|min:0|max:100',
             'condition_grade' => 'required|string|max:20',
             'status' => 'nullable|in:available,sold,reserved,defective',
@@ -42,6 +44,9 @@ class DeviceUpdateRequest extends FormRequest
             'product_id.exists' => 'The selected product is invalid.',
             'imei.required' => 'IMEI is required.',
             'imei.unique' => 'This IMEI has already been registered.',
+            'ram_option_id.required' => 'RAM is required.',
+            'storage_option_id.required' => 'Storage is required.',
+            'color_option_id.required' => 'Color is required.',
         ];
     }
 }

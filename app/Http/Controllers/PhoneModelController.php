@@ -61,6 +61,15 @@ class PhoneModelController extends Controller
                 }
             }
 
+            // Sync colors with color_options table
+            if ($request->filled('available_color') && is_array($request->available_color)) {
+                foreach ($request->available_color as $color) {
+                    if (isset($color['name']) && isset($color['value'])) {
+                        \App\Support\VariantStock::getOrCreateColorOption($color['name'], $color['value']);
+                    }
+                }
+            }
+
             $phoneModel = Phone_model::create([
                 'model_name'       => $request->name,
                 'brand_id'         => $request->brand_id,
@@ -122,6 +131,15 @@ class PhoneModelController extends Controller
         foreach ($removed as $file) {
             if ($file) {
                 Storage::disk('public')->delete('phone_model/' . $file);
+            }
+        }
+
+        // Sync colors with color_options table
+        if ($request->filled('available_color') && is_array($request->available_color)) {
+            foreach ($request->available_color as $color) {
+                if (isset($color['name']) && isset($color['value'])) {
+                    \App\Support\VariantStock::getOrCreateColorOption($color['name'], $color['value']);
+                }
             }
         }
 

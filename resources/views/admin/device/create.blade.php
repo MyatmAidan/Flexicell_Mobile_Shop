@@ -60,42 +60,55 @@
                         <div class="row">
                             <div class="col-md-6">
                                 <div class="form-group mb-3">
-                                    <label for="ram" class="form-label">RAM <span class="text-danger fs-5">*</span></label>
-                                    <input type="text" class="form-control" id="ram" name="ram"
-                                        placeholder="e.g. 8GB" value="{{ old('ram') }}" required>
+                                    <label for="ram_option_id" class="form-label">RAM <span class="text-danger fs-5">*</span></label>
+                                    <select class="form-control" id="ram_option_id" name="ram_option_id" required>
+                                        <option value="">Select RAM</option>
+                                        @foreach(($ramOptions ?? []) as $opt)
+                                            <option value="{{ $opt->id }}" @selected(old('ram_option_id') == $opt->id)>{{ $opt->value }}</option>
+                                        @endforeach
+                                    </select>
                                 </div>
                             </div>
                             <div class="col-md-6">
                                 <div class="form-group mb-3">
-                                    <label for="storage" class="form-label">Storage <span class="text-danger fs-5">*</span></label>
-                                    <input type="text" class="form-control" id="storage" name="storage"
-                                        placeholder="e.g. 128GB" value="{{ old('storage') }}" required>
+                                    <label for="storage_option_id" class="form-label">Storage <span class="text-danger fs-5">*</span></label>
+                                    <select class="form-control" id="storage_option_id" name="storage_option_id" required>
+                                        <option value="">Select Storage</option>
+                                        @foreach(($storageOptions ?? []) as $opt)
+                                            <option value="{{ $opt->id }}" @selected(old('storage_option_id') == $opt->id)>{{ $opt->value }}</option>
+                                        @endforeach
+                                    </select>
                                 </div>
                             </div>
                         </div>
                         <div class="row">
-                            <div class="form-group mb-3">
-                                <label for="color" class="form-label">
-                                    Color <span class="text-danger fs-5">*</span>
-                                </label>
-
-                                <div class="d-flex align-items-center gap-2">
-                                    <input type="color"
-                                        class="form-control form-control-color"
-                                        id="color"
-                                        value="{{ old('color', '#000000') }}"
-                                        style="width: 60px; height: 40px;"
-                                    >
-
-                                    <input type="text"
-                                        class="form-control"
-                                        id="color_code"
-                                        placeholder="#000000"
-                                        style="max-width: 150px;"
-                                    >
+                            <div class="col-md-6">
+                                <div class="form-group mb-3">
+                                    <label class="form-label">Color <span class="text-danger fs-5">*</span></label>
+                                    <div id="color-selection-wrapper">
+                                        <div class="d-flex gap-2 mb-1" id="existing-color-group">
+                                            <select class="form-control" id="color_option_id" name="color_option_id">
+                                                <option value="">Select Color</option>
+                                                @foreach(($colorOptions ?? []) as $opt)
+                                                    <option value="{{ $opt->id }}" @selected(old('color_option_id') == $opt->id)>{{ $opt->name }}</option>
+                                                @endforeach
+                                            </select>
+                                            <button type="button" class="btn btn-outline-primary btn-sm whitespace-nowrap" id="btn-toggle-new-color" title="Add New Color">
+                                                <i class="fa fa-plus"></i> New
+                                            </button>
+                                        </div>
+                                        <div class="d-none" id="new-color-group">
+                                            <div class="d-flex gap-2">
+                                                <input type="text" class="form-control" id="new_color_name" name="new_color_name" placeholder="Color Name (e.g. Silver)">
+                                                <input type="color" class="form-control form-control-color" id="new_color_value" name="new_color_value" value="#000000" title="Choose a color" style="width: 60px; height: 38px;">
+                                                <button type="button" class="btn btn-outline-secondary btn-sm" id="btn-cancel-new-color" title="Cancel New Color">
+                                                    <i class="fa fa-times"></i>
+                                                </button>
+                                            </div>
+                                            <small class="text-muted">Defining a new color that will be saved on submit.</small>
+                                        </div>
+                                    </div>
                                 </div>
-
-                                <input type="hidden" name="color" id="color_hidden" value="{{ old('color', '#000000') }}">
                             </div>
                             <div class="col-md-6">
                                 <div class="form-group mb-3">
@@ -146,8 +159,14 @@
                             <input type="file" class="form-control" id="image-input" accept="image/*" multiple>
                             <div class="mt-2" id="image-preview-wrapper"></div>
                         </div>
-                        <button type="submit" class="btn btn-primary mt-3">Create Device</button>
-                        <a href="{{ route('admin.device.index') }}" class="btn btn-secondary mt-3">Cancel</a>
+                        <div class="d-flex justify-content-end gap-2 mt-1 mb-3 me-3">
+                            <a href="{{ route('admin.device.index') }}" class="btn btn-secondary">
+                                Cancel
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                Create Device
+                            </button>
+                        </div>
                     </form>
                 </div>
             </div>
@@ -232,27 +251,6 @@
             $(this).closest('.image-preview-item').remove();
         });
 
-        // COLOR PICKER SYNC
-        function isValidHex(hex) {
-            return /^#([0-9A-F]{3}){1,2}$/i.test(hex);
-        }
-
-        // When picker changes
-        $('#color').on('input', function () {
-            let color = $(this).val();
-            $('#color_code').val(color);
-            $('#color_hidden').val(color);
-        });
-
-        // When user types manually
-        $('#color_code').on('input', function () {
-            let color = $(this).val();
-
-            if (isValidHex(color)) {
-                $('#color').val(color);
-                $('#color_hidden').val(color);
-            }
-        });
 
         $('#create-device-form').on('submit', function(e) {
             e.preventDefault();
@@ -277,6 +275,21 @@
                     Swal.fire({ icon: 'error', title: 'Error', html: msg });
                 }
             });
+        });
+
+        // Toggle Color Logic
+        $('#btn-toggle-new-color').on('click', function() {
+            $('#existing-color-group').addClass('d-none');
+            $('#new-color-group').removeClass('d-none');
+            $('#color_option_id').val('').prop('required', false);
+            $('#new_color_name').prop('required', true).focus();
+        });
+
+        $('#btn-cancel-new-color').on('click', function() {
+            $('#new-color-group').addClass('d-none');
+            $('#existing-color-group').removeClass('d-none');
+            $('#new_color_name').val('').prop('required', false);
+            $('#color_option_id').prop('required', true);
         });
     });
 </script>

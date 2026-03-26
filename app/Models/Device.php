@@ -28,4 +28,19 @@ class Device extends Model
     {
         return $this->belongsTo(Product::class);
     }
+
+    public function ramOption()
+    {
+        return $this->belongsTo(\App\Models\RamOption::class, 'ram_option_id');
+    }
+
+    public function storageOption()
+    {
+        return $this->belongsTo(\App\Models\StorageOption::class, 'storage_option_id');
+    }
+
+    public function colorOption()
+    {
+        return $this->belongsTo(\App\Models\ColorOption::class, 'color_option_id');
+    }
 }

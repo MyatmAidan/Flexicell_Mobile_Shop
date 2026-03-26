@@ -12,17 +12,18 @@ class AdminAuth
     /**
      * Handle an incoming request.
      *
-     * @param  \Closure(\Illuminate\Http\Request): (\Symfony\Component\HttpFoundation\Response)  $next
+     * Allow any of the three admin-panel roles: superadmin, manager, staff.
      */
     public function handle(Request $request, Closure $next): Response
     {
         $user = Auth::user();
-        
-        if (!$user || $user->role !== 'admin') {
+
+        if (!$user || !in_array($user->role, ['superadmin', 'manager', 'staff'])) {
             return redirect()->route('home')->with('error', 'Unauthorized action. Admin access required.');
         }
 
         return $next($request);
     }
 }
+
 

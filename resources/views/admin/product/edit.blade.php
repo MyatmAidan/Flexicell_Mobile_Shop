@@ -132,9 +132,9 @@
                                     @foreach ($product->devices as $index => $device)
                                         <tr data-device-id="{{ $device->id }}"
                                             data-imei="{{ $device->imei }}"
-                                            data-ram="{{ $device->ram }}"
-                                            data-storage="{{ $device->storage }}"
-                                            data-color="{{ $device->color }}"
+                                            data-ram_option_id="{{ $device->ram_option_id }}"
+                                            data-storage_option_id="{{ $device->storage_option_id }}"
+                                            data-color_option_id="{{ $device->color_option_id }}"
                                             data-battery="{{ $device->battery_percentage }}"
                                             data-condition="{{ $device->condition_grade }}"
                                             data-status="{{ $device->status }}"
@@ -143,10 +143,10 @@
                                             data-image="{{ is_array($device->image) ? json_encode($device->image) : ($device->image ? json_encode([$device->image]) : '[]') }}"
                                             data-product-id="{{ $device->product_id }}">
                                             <td>{{ $index + 1 }}</td>
-                                            <td class="device-imei">{{ $device->imei }}</td>
-                                            <td class="device-ram">{{ $device->ram }}</td>
-                                            <td class="device-storage">{{ $device->storage }}</td>
-                                            <td class="device-color">{{ $device->color }}</td>
+                                            <td class="device-imei">{{ $device->imei ?? '-' }}</td>
+                                            <td class="device-ram">{{ $device->ramOption?->value ?? '-' }}</td>
+                                            <td class="device-storage">{{ $device->storageOption?->value ?? '-' }}</td>
+                                            <td class="device-color">{{ $device->colorOption?->value ?? '-' }}</td>
                                             <td><span class="badge bg-{{ $device->status == 'available' ? 'success' : ($device->status == 'sold' ? 'secondary' : 'warning') }} device-status">{{ $device->status }}</span></td>
                                             <td>
                                                 <button type="button" class="btn btn-sm btn-outline-primary edit-device-btn" data-device-id="{{ $device->id }}">
@@ -287,9 +287,9 @@
                 $('#modal_product_id').append(`<option value="${p.id}" ${row.data('product-id') == p.id ? 'selected' : ''}>${p.label}</option>`);
             });
             $('#modal_imei').val(row.data('imei'));
-            $('#modal_ram').val(row.data('ram'));
-            $('#modal_storage').val(row.data('storage'));
-            $('#modal_color').val(row.data('color'));
+            $('#modal_ram').val(row.data('ram_option_id') || '');
+            $('#modal_storage').val(row.data('storage_option_id') || '');
+            $('#modal_color_option_id').val(row.data('color_option_id') || '');
             $('#modal_battery_percentage').val(row.data('battery'));
             $('#modal_condition_grade').val(row.data('condition'));
             $('#modal_status').val(row.data('status'));
@@ -320,6 +320,7 @@
             $('#device-edit-form').attr('action', updateDeviceUrl + '/' + deviceId);
             deviceEditModal.show();
         });
+
 
         $('#modal_image_input').on('change', function(e) {
             const files = e.target.files;
@@ -376,9 +377,9 @@
                     Swal.fire({ toast: true, position: 'top-end', icon: 'success', title: response.message, timer: 2000, showConfirmButton: false });
                     const row = $(`tr[data-device-id="${deviceId}"]`);
                     row.data('imei', $('#modal_imei').val());
-                    row.data('ram', $('#modal_ram').val());
-                    row.data('storage', $('#modal_storage').val());
-                    row.data('color', $('#modal_color').val());
+                    row.data('ram_option_id', $('#modal_ram').val());
+                    row.data('storage_option_id', $('#modal_storage').val());
+                    row.data('color_option_id', $('#modal_color_option_id').val());
                     row.data('purchase_price', $('#modal_purchase_price').val());
                     row.data('selling_price', $('#modal_selling_price').val());
                     
@@ -397,9 +398,9 @@
                     row.data('condition', $('#modal_condition_grade').val());
                     row.data('status', $('#modal_status').val());
                     row.find('.device-imei').text($('#modal_imei').val());
-                    row.find('.device-ram').text($('#modal_ram').val());
-                    row.find('.device-storage').text($('#modal_storage').val());
-                    row.find('.device-color').text($('#modal_color').val());
+                    row.find('.device-ram').text($('#modal_ram option:selected').text());
+                    row.find('.device-storage').text($('#modal_storage option:selected').text());
+                    row.find('.device-color').text($('#modal_color_option_id option:selected').text());
                     row.find('.device-status').removeClass('bg-success bg-secondary bg-warning')
                         .addClass($('#modal_status').val() == 'available' ? 'bg-success' : ($('#modal_status').val() == 'sold' ? 'bg-secondary' : 'bg-warning'))
                         .text($('#modal_status').val());

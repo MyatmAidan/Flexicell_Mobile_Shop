@@ -143,17 +143,20 @@
                                         </div>
                                     </div>
                                 </div>
-                                <button type="button" class="btn btn-primary" id="add-description-btn">Add
-                                    Description
+                                <button type="button" class="btn btn-outline-primary btn-sm" id="add-description-btn">
+                                    <i class="fa fa-plus"></i> Add Description
                                 </button>
                             </div>
                             <div class="form-group mb-3">
                                 <label class="form-label">Available Colors</label>
                                 <div id="color-wrapper">
                                     <div class="row mb-2">
+                                        <div class="col-md-5">
+                                            <input type="text" class="form-control" name="available_color[0][name]" placeholder="Color Name (e.g. Silver)">
+                                        </div>
                                         <div class="col-md-3">
-                                            <input type="color" class="form-control form-control-color w-100" name="available_color[]"
-                                                title="Choose a color">
+                                            <input type="color" class="form-control form-control-color w-100" name="available_color[0][value]"
+                                                title="Choose a color" style="height: 38px;">
                                         </div>
                                         <div class="col-md-2">
                                             <button type="button" class="btn btn-danger remove-color-btn"><i
@@ -161,7 +164,9 @@
                                         </div>
                                     </div>
                                 </div>
-                                <button type="button" class="btn btn-primary" id="add-color-btn">Add Color</button>
+                                <button type="button" class="btn btn-outline-primary btn-sm" id="add-color-btn">
+                                    <i class="fa fa-plus"></i> Add Color
+                                </button>
                             </div>
                             <div class="form-group mb-3">
                                 <label for="logo-input" class="form-label">Images <span
@@ -169,7 +174,14 @@
                                 <input type="file" class="form-control" id="logo-input" accept="image/*" multiple>
                                 <div class="mt-2" id="image-preview-wrapper"></div>
                             </div>
-                            <button type="submit" class="btn btn-primary mt-3">Create Phone Model</button>
+                            <div class="d-flex justify-content-end gap-2 mt-1 mb-3 me-3">
+                                <a href="{{ route('admin.phone_model.index') }}" class="btn btn-secondary">
+                                    Cancel
+                                </a>
+                                <button type="submit" class="btn btn-primary">
+                                    Create Phone Model
+                                </button>
+                            </div>
                         </form>
                     </div>
                 </div>
@@ -226,17 +238,22 @@
                 $(this).closest('.row').remove();
             });
 
+            let colorIndex = 1;
             $('#add-color-btn').on('click', function() {
                 $('#color-wrapper').append(`
                     <div class="row mb-2">
+                        <div class="col-md-5">
+                            <input type="text" class="form-control" name="available_color[${colorIndex}][name]" placeholder="Color Name">
+                        </div>
                         <div class="col-md-3">
-                            <input type="color" class="form-control form-control-color w-100" name="available_color[]" title="Choose a color">
+                            <input type="color" class="form-control form-control-color w-100" name="available_color[${colorIndex}][value]" title="Choose a color" style="height: 38px;">
                         </div>
                         <div class="col-md-2">
                             <button type="button" class="btn btn-danger remove-color-btn"><i class="fa-solid fa-xmark"></i></button>
                         </div>
                     </div>
                 `);
+                colorIndex++;
             });
 
             $('#color-wrapper').on('click', '.remove-color-btn', function() {

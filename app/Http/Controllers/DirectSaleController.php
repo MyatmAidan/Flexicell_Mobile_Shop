@@ -11,9 +11,11 @@ use App\Models\InstallmentRate;
 use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\Product;
+use App\Support\VariantStock;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
+use Illuminate\Http\Request;
 
 class DirectSaleController extends Controller
 {
@@ -48,12 +50,25 @@ class DirectSaleController extends Controller
                 ->whereNull('order_id')
                 ->count();
 
+            $fallbackDevicePrice = Device::query()
+                ->where('product_id', $p->id)
+                ->where('status', 'available')
+                ->whereNull('order_id')
+                ->whereNotNull('selling_price')
+                ->orderBy('selling_price')
+                ->value('selling_price');
+
+            $effectivePrice = (float) ($p->selling_price ?? 0);
+            if ($effectivePrice <= 0 && $fallbackDevicePrice !== null) {
+                $effectivePrice = (float) $fallbackDevicePrice;
+            }
+
             return [
                 'id' => $p->id,
                 'label' => ($p->phoneModel->model_name ?? '-') . ' (' . $p->product_type . ')',
                 'brand' => $p->phoneModel?->brand?->brand_name ?? '-',
                 'product_type' => $p->product_type,
-                'selling_price' => (float) $p->selling_price,
+                'selling_price' => $effectivePrice,
                 'stock_quantity' => (int) $p->stock_quantity,
                 'available_devices' => (int) $availableDevices,
                 'image' => $firstImage,
@@ -87,6 +102,10 @@ class DirectSaleController extends Controller
         }
 
         $product = $device->product;
+        $effectivePrice = (float) ($device->selling_price ?? 0);
+        if ($effectivePrice <= 0) {
+            $effectivePrice = (float) ($product?->selling_price ?? 0);
+        }
 
         return response()->json([
             'data' => [
@@ -95,12 +114,84 @@ class DirectSaleController extends Controller
                 'product_id' => $device->product_id,
                 'product_label' => ($product?->phoneModel?->model_name ?? '-') . ' (' . ($product?->product_type ?? '-') . ')',
                 'brand' => $product?->phoneModel?->brand?->brand_name ?? '-',
-                'selling_price' => (float) ($product?->selling_price ?? 0),
-                'ram' => $device->ram,
-                'storage' => $device->storage,
-                'color' => $device->color,
+                'selling_price' => $effectivePrice,
+                'ram' => $device->ramOption?->value ?? '-',
+                'storage' => $device->storageOption?->value ?? '-',
+                'color' => $device->colorOption?->value ?? '-',
             ],
         ]);
+    }
+
+    public function checkVariantStock(Request $request)
+    {
+        $productId = $request->product_id;
+        $ram = $request->ram;
+        $storage = $request->storage;
+        $color = $request->color;
+
+        $count = Device::query()
+            ->where('product_id', $productId)
+            ->whereNull('order_id')
+            ->where('status', 'available')
+            ->when($ram, function ($q) use ($ram) {
+                $q->where('ram_option_id', $ram);
+            })
+            ->when($storage, function ($q) use ($storage) {
+                $q->where('storage_option_id', $storage);
+            })
+            ->when($color, function ($q) use ($color) {
+                $q->where('color_option_id', $color);
+            })
+            ->count();
+
+        return response()->json(['count' => $count]);
+    }
+    
+    public function variants(Product $product)
+    {
+        $rows = DB::table('devices as d')
+            ->leftJoin('ram_options as ro', 'ro.id', '=', 'd.ram_option_id')
+            ->leftJoin('storage_options as so', 'so.id', '=', 'd.storage_option_id')
+            ->leftJoin('color_options as co', 'co.id', '=', 'd.color_option_id')
+            ->where('d.product_id', $product->id)
+            ->select([
+                'ro.id as ram_id', 'ro.value as ram_value',
+                'so.id as storage_id', 'so.value as storage_value',
+                'co.id as color_id', 'co.value as color_value',
+            ])
+            ->get();
+
+        $ram = []; $storage = []; $color = [];
+        
+        foreach ($rows as $row) {
+            if ($row->ram_id) $ram[$row->ram_id] = $row->ram_value;
+            if ($row->storage_id) $storage[$row->storage_id] = $row->storage_value;
+            if ($row->color_id) $color[$row->color_id] = $row->color_value;
+        }
+
+        $map = fn($arr) => collect($arr)->map(fn($v, $id) => ['id' => $id, 'value' => $v])->values();
+
+        return response()->json([
+            'data' => [
+                'product_id' => $product->id,
+                'ram' => $map($ram),
+                'storage' => $map($storage),
+                'color' => $map($color),
+            ],
+        ]);
+    }
+
+    public function receipt(Order $order)
+    {
+        $order->load([
+            'items.product.phoneModel.brand',
+            'items.device',
+            'installment.rate',
+            'installment.payments',
+        ]);
+
+        // Reuse the main Order receipt template for consistency.
+        return view('admin.order.receipt', compact('order'));
     }
 
     public function checkout(DirectSaleCheckoutRequest $request)
@@ -114,15 +205,20 @@ class DirectSaleController extends Controller
 
             $orderItemsToCreate = [];
             $devicesToUpdate = [];
+            $touchedProductIds = [];
 
             $totalAmount = 0.0;
             $discountAmount = 0.0;
 
             foreach ($items as $index => $line) {
-                $productId = (int) $line['product_id'];
+                $productId = (int) ($line['product_id'] ?? null);
                 $quantity = (int) ($line['quantity'] ?? 1);
-                $discountPrice = (float) ($line['discount_price'] ?? 0);
+                $ram_option_id = $line['ram_option_id'] ?? null;
+                $storage_option_id = $line['storage_option_id'] ?? null;
+                $color_option_id = $line['color_option_id'] ?? null;
 
+                $discountPrice = (float) ($line['discount_price'] ?? 0);
+                
                 $deviceId = $line['device_id'] ?? null;
                 $imei = $line['imei'] ?? null;
                 $isDeviceLine = !empty($deviceId) || !empty($imei);
@@ -158,6 +254,12 @@ class DirectSaleController extends Controller
                         ]);
                     }
 
+                    if (is_string($device->imei) && str_starts_with($device->imei, 'PENDING-')) {
+                        throw ValidationException::withMessages([
+                            "items.$index.device_id" => ['Device IMEI is not set yet. Please edit device details before selling.'],
+                        ]);
+                    }
+
                     $unitPrice = isset($line['unit_price'])
                         ? (float) $line['unit_price']
                         : (float) ($productForDevice->selling_price ?? 0);
@@ -184,6 +286,7 @@ class DirectSaleController extends Controller
                     ];
 
                     $devicesToUpdate[] = $device;
+                    $touchedProductIds[] = (int) $device->product_id;
                 } else {
                     $product = Product::query()->whereKey($productId)->lockForUpdate()->first();
                     if (!$product) {
@@ -204,9 +307,31 @@ class DirectSaleController extends Controller
                         ]);
                     }
 
-                    if ((int) $product->stock_quantity < $quantity) {
+                    // Allocate actual devices for this product (variant-aware) instead of only decrementing stock.
+                    $deviceAllocQuery = Device::query()
+                        ->select('devices.*')
+                        ->leftJoin('ram_options as ro', 'ro.id', '=', 'devices.ram_option_id')
+                        ->leftJoin('storage_options as so', 'so.id', '=', 'devices.storage_option_id')
+                        ->leftJoin('color_options as co', 'co.id', '=', 'devices.color_option_id')
+                        ->where('devices.product_id', $product->id)
+                        ->whereNull('devices.order_id')
+                        ->where('devices.status', 'available')
+                        ->lockForUpdate();
+
+                    if ($ram_option_id) {
+                        $deviceAllocQuery->where('devices.ram_option_id', $ram_option_id);
+                    }
+                    if ($storage_option_id) {
+                        $deviceAllocQuery->where('devices.storage_option_id', $storage_option_id);
+                    }
+                    if ($color_option_id) {
+                        $deviceAllocQuery->where('devices.color_option_id', $color_option_id);
+                    }
+
+                    $allocDevices = $deviceAllocQuery->limit($quantity)->get();
+                    if ($allocDevices->count() < $quantity) {
                         throw ValidationException::withMessages([
-                            "items.$index.quantity" => ["Insufficient stock. Available: {$product->stock_quantity}."],
+                            "items.$index.quantity" => ['Insufficient available devices for the selected variant.'],
                         ]);
                     }
 
@@ -220,20 +345,26 @@ class DirectSaleController extends Controller
                         ]);
                     }
 
-                    $lineTotal = ($unitPrice - $discountPrice) * $quantity;
-                    $totalAmount += ($unitPrice * $quantity);
-                    $discountAmount += ($discountPrice * $quantity);
+                    // Create one order item per allocated device (keeps device_id linkage for receipt/variants)
+                    foreach ($allocDevices as $d) {
+                        $lineTotal = ($unitPrice - $discountPrice) * 1;
+                        $totalAmount += ($unitPrice * 1);
+                        $discountAmount += ($discountPrice * 1);
 
-                    $orderItemsToCreate[] = [
-                        'product_id' => $productId,
-                        'quantity' => $quantity,
-                        'device_id' => null,
-                        'unit_price' => $unitPrice,
-                        'discount_price' => $discountPrice,
-                        'total' => $lineTotal,
-                        'created_at' => now(),
-                        'updated_at' => now(),
-                    ];
+                        $orderItemsToCreate[] = [
+                            'product_id' => $productId,
+                            'quantity' => 1,
+                            'device_id' => $d->id,
+                            'unit_price' => $unitPrice,
+                            'discount_price' => $discountPrice,
+                            'total' => $lineTotal,
+                            'created_at' => now(),
+                            'updated_at' => now(),
+                        ];
+
+                        $devicesToUpdate[] = $d;
+                        $touchedProductIds[] = (int) $d->product_id;
+                    }
 
                     $product->decrement('stock_quantity', $quantity);
                 }
@@ -291,6 +422,18 @@ class DirectSaleController extends Controller
                 ]);
             }
 
+
+            // Payment record
+            if ($paymentType === 'cash') {
+                \App\Models\Payment::create([
+                    'order_id' => $order->id,
+                    'payment_type' => 'cash',
+                    'amount' => $grandTotal,
+                    'status' => 'completed',
+                    'paid_at' => now(),
+                ]);
+            }
+
             if ($paymentType === 'installment') {
                 $installmentRateId = $payload['installment_rate_id'] ?? null;
                 if (!$installmentRateId) {
@@ -338,6 +481,14 @@ class DirectSaleController extends Controller
                         'status'         => 'paid',
                         'paid_date'      => now()->toDateString(),
                     ]);
+
+                    \App\Models\Payment::create([
+                        'order_id' => $order->id,
+                        'payment_type' => 'installment',
+                        'amount' => $downPayment,
+                        'status' => 'completed',
+                        'paid_at' => now(),
+                    ]);
                 }
 
                 // Generate monthly payment schedule rows
@@ -354,6 +505,8 @@ class DirectSaleController extends Controller
             return [
                 'order_id' => $order->id,
                 'grand_total' => $order->grand_total,
+                // Use the existing Order receipt page (same as Order detail page uses).
+                'receipt_url' => route('admin.order.receipt', $order->id),
             ];
         });
 

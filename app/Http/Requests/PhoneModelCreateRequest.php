@@ -32,7 +32,8 @@ class PhoneModelCreateRequest extends FormRequest
             'description.*.key' => 'nullable|string',
             'description.*.value' => 'nullable|string',
             'available_color' => 'nullable|array',
-            'available_color.*' => 'nullable|string',
+            'available_color.*.name' => 'nullable|string',
+            'available_color.*.value' => 'nullable|string',
             'image' => 'nullable|array',
             'image.*' => 'nullable|string',
         ];

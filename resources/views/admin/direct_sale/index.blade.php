@@ -162,6 +162,60 @@
             
         </div>
     </div>
+
+    <!-- Variant Modal -->
+    <div class="modal fade" id="variantModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-md modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Select Variant</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <input type="hidden" id="variantProductId">
+                    <div class="mb-2 fw-semibold" id="variantProductName"></div>
+
+                    <div class="row g-2">
+                        <div class="col-6">
+                            <label class="form-label">RAM</label>
+                            <select class="form-control variant-option" id="variantRam">
+                                <option value="">Any</option>
+                            </select>
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label">Storage</label>
+                            <select class="form-control variant-option" id="variantStorage">
+                                <option value="">Any</option>
+                            </select>
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label">Color</label>
+                            <select class="form-control variant-option" id="variantColor">
+                                <option value="">Any</option>
+                            </select>
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label">Qty</label>
+                            <input type="number" class="form-control" id="variantQty" min="1" value="1">
+                        </div>
+                    </div>
+
+                    <div class="mt-3 p-2 border rounded bg-light d-flex justify-content-between align-items-center" id="variantStockStatusBox">
+                        <span class="text-muted small">Availability</span>
+                        <span id="variantStockDisplay" class="fw-bold">-</span>
+                    </div>
+
+                    <small class="text-muted d-block mt-2">
+                        Only available devices with real IMEI are allocated (PENDING devices are blocked).
+                    </small>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary" id="variantAddBtn">Add to cart</button>
+                </div>
+            </div>
+        </div>
+    </div>
 @endsection
 
 @section('script')
@@ -171,6 +225,8 @@
         const urls = {
             products: "{{ route('admin.direct_sale.products') }}",
             devices: "{{ route('admin.direct_sale.devices') }}",
+            variants: "{{ route('admin.direct_sale.variants', ['product' => '__id__']) }}",
+            variants_stock: "{{ route('admin.direct_sale.variants_stock') }}",
             checkout: "{{ route('admin.direct_sale.checkout') }}"
         };
         const productImageBase = "{{ asset('storage/products') }}";
@@ -190,6 +246,7 @@
          */
         let cart = [];
         let productCache = {};
+        const variantModal = new bootstrap.Modal(document.getElementById('variantModal'));
 
         function money(n) {
             return (Number(n || 0)).toFixed(2);
@@ -256,6 +313,9 @@
                     quantity,
                     unit_price: Number(product.selling_price || 0),
                     discount_price: 0,
+                    ram: null,
+                    storage: null,
+                    color: null,
                 });
             }
             renderCart();
@@ -349,8 +409,63 @@
                 Swal.fire({ icon: 'warning', title: 'Out of stock', text: 'This product has no stock.' });
                 return;
             }
-            upsertQtyProduct(product, 1);
+            // Open variant modal to pick ram/storage/color + qty
+            $.get(urls.variants.replace('__id__', product.id))
+                .done(function(res) {
+                    const v = res.data;
+                    $('#variantProductId').val(product.id);
+                    $('#variantProductName').text(`${product.label} - ${product.brand}`);
+                    $('#variantQty').val(1);
+
+                    const fillSelect = (sel, items) => {
+                        const $s = $(sel);
+                        $s.empty().append('<option value=\"\">Any</option>');
+                        (items || []).forEach(x => {
+                            if (x.id) $s.append(`<option value=\"${x.id}\">${x.value}</option>`);
+                        });
+                    };
+                    fillSelect('#variantRam', v.ram);
+                    fillSelect('#variantStorage', v.storage);
+                    fillSelect('#variantColor', v.color);
+
+                    variantModal.show();
+                    checkVariantStock(); // Initial check
+                })
+                .fail(function() {
+                    upsertQtyProduct(product, 1);
+                });
         });
+
+        // Dynamic stock check in modal
+        $('.variant-option').on('change', function() {
+            checkVariantStock();
+        });
+
+        function checkVariantStock() {
+            const productId = $('#variantProductId').val();
+            const ram = $('#variantRam').val();
+            const storage = $('#variantStorage').val();
+            const color = $('#variantColor').val();
+
+            $('#variantStockDisplay').html('<span class="spinner-border spinner-border-sm text-secondary"></span>');
+            $('#variantAddBtn').prop('disabled', true);
+
+            $.get(urls.variants_stock, { product_id: productId, ram, storage, color })
+                .done(function(res) {
+                    const count = res.count || 0;
+                    if (count > 0) {
+                        $('#variantStockDisplay').html(`<span class="text-success">${count} Available</span>`);
+                        $('#variantAddBtn').prop('disabled', false);
+                    } else {
+                        $('#variantStockDisplay').html('<span class="text-danger">Out of Stock</span>');
+                        $('#variantAddBtn').prop('disabled', true);
+                    }
+                })
+                .fail(function() {
+                    $('#variantStockDisplay').html('<span class="text-muted">Error</span>');
+                    $('#variantAddBtn').prop('disabled', true);
+                });
+        }
 
         // IMEI add
         function loadDeviceByImei(imei) {
@@ -461,6 +576,11 @@
                 if (l.imei) formData.append(`items[${i}][imei]`, l.imei);
                 formData.append(`items[${i}][unit_price]`, Number(l.unit_price));
                 formData.append(`items[${i}][discount_price]`, Number(l.discount_price || 0));
+                if (!l.device_id) {
+                    if (l.ram_option_id) formData.append(`items[${i}][ram_option_id]`, l.ram_option_id);
+                    if (l.storage_option_id) formData.append(`items[${i}][storage_option_id]`, l.storage_option_id);
+                    if (l.color_option_id) formData.append(`items[${i}][color_option_id]`, l.color_option_id);
+                }
             });
 
             formData.append('customer_name', customer_name);
@@ -499,8 +619,11 @@
                 contentType: false,
                 data: formData,
                 success: function(res) {
-                    const receiptUrl = "{{ route('admin.order.receipt', ':id') }}?print=1".replace(':id', res.data.order_id);
-                    window.location.href = receiptUrl;
+                    if (res.data?.receipt_url) {
+                        window.location.href = res.data.receipt_url + '?print=1';
+                        return;
+                    }
+                    window.location.href = "{{ route('admin.direct_sale.index') }}";
                 },
                 error: function(xhr) {
                     let msg = xhr.responseJSON?.message || 'Checkout failed.';
@@ -519,6 +642,49 @@
         loadProducts('');
         renderCart();
         $('#imeiInput').focus();
+
+        // Variant modal add
+        $('#variantAddBtn').on('click', function() {
+            const productId = Number($('#variantProductId').val());
+            const product = productCache[productId];
+            if (!product) return;
+            const qty = Math.max(1, Number($('#variantQty').val() || 1));
+            const ram_id = $('#variantRam').val() || null;
+            const ram_val = $('#variantRam option:selected').text();
+            const storage_id = $('#variantStorage').val() || null;
+            const storage_val = $('#variantStorage option:selected').text();
+            const color_id = $('#variantColor').val() || null;
+            const color_val = $('#variantColor option:selected').text();
+
+            const key = `p-${product.id}-${ram_id || 'any'}-${storage_id || 'any'}-${color_id || 'any'}`;
+            const existing = cart.find(x => x.key === key);
+
+            const optionsLabel = [
+                ram_id ? ram_val : null,
+                storage_id ? storage_val : null,
+                color_id ? color_val : null
+            ].filter(Boolean).join('/');
+            
+            const labelSuffix = optionsLabel ? ` (${optionsLabel})` : '';
+
+            if (existing) {
+                existing.quantity += qty;
+            } else {
+                cart.push({
+                    key,
+                    product_id: product.id,
+                    product_label: product.label + labelSuffix,
+                    unit_price: product.selling_price,
+                    discount_price: 0,
+                    quantity: qty,
+                    ram_option_id: ram_id,
+                    storage_option_id: storage_id,
+                    color_option_id: color_id,
+                });
+            }
+            variantModal.hide();
+            renderCart();
+        });
     });
 </script>
 @endsection

@@ -22,6 +22,9 @@ class DirectSaleCheckoutRequest extends FormRequest
             'items.*.imei' => ['nullable', 'string', 'max:255'],
             'items.*.unit_price' => ['nullable', 'numeric', 'min:0'],
             'items.*.discount_price' => ['nullable', 'numeric', 'min:0'],
+            'items.*.ram_option_id' => ['nullable', 'exists:ram_options,id'],
+            'items.*.storage_option_id' => ['nullable', 'exists:storage_options,id'],
+            'items.*.color_option_id' => ['nullable', 'exists:color_options,id'],
 
             'customer_name' => ['nullable', 'string', 'max:255'],
             'customer_phone' => ['nullable', 'string', 'max:50'],
@@ -63,4 +66,3 @@ class DirectSaleCheckoutRequest extends FormRequest
         });
     }
 }
-

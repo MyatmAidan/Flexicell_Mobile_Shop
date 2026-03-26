@@ -20,7 +20,7 @@
             <i class="fas fa-arrow-left me-1"></i> Back to Orders
         </a>
         <a href="{{ route('admin.order.receipt', $order->id) }}" target="_blank" class="btn btn-md btn-primary">
-            <i class="fas fa-print me-1"></i> Print Receipt
+            <i class="fas fa-print me-1"></i> View Receipt
         </a>
     </div>
 

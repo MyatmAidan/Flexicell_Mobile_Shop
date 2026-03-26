@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Device;
 use App\Models\Product;
 use App\Models\Phone_model;
+use App\Support\VariantStock;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use App\Http\Requests\ProductCreateRequest;
@@ -58,7 +59,10 @@ class ProductController extends Controller
     public function create()
     {
         $phoneModels = Phone_model::with('brand', 'category')->get();
-        return view('admin.product.create', compact('phoneModels'));
+        $ramOptions = DB::table('ram_options')->orderBy('name')->get(['id', 'name', 'value']);
+        $storageOptions = DB::table('storage_options')->orderBy('name')->get(['id', 'name', 'value']);
+        $colorOptions = DB::table('color_options')->orderBy('name')->get(['id', 'name', 'value']);
+        return view('admin.product.create', compact('phoneModels', 'ramOptions', 'storageOptions', 'colorOptions'));
     }
 
     public function store(ProductCreateRequest $request)
@@ -108,13 +112,18 @@ class ProductController extends Controller
 
             if ($isSecondHand) {
 
+                $colorOptionId = $request->color_option_id;
+                if ($request->filled('new_color_name')) {
+                    $colorOptionId = \App\Support\VariantStock::getOrCreateColorOption($request->new_color_name, $request->new_color_value);
+                }
+
                 $purchase = SecondPhonePurchase::create([
-                    'user_id' => auth()->id(),
+                    'user_id' => \Illuminate\Support\Facades\Auth::id(),
                     'phone_model_id' => $request->phone_model_id,
                     'imei' => $request->imei,
-                    'ram' => $request->ram,
-                    'storage' => $request->storage,
-                    'color' => $request->color,
+                    'ram_option_id' => $request->ram_option_id,
+                    'storage_option_id' => $request->storage_option_id,
+                    'color_option_id' => $colorOptionId,
                     'image' => $imageFiles ?: null,
                     'condition_grade' => $request->condition_grade,
                     'battery_percentage' => $request->battery_percentage,
@@ -122,13 +131,13 @@ class ProductController extends Controller
                     'purchase_at' => $request->purchase_at ?? now(),
                 ]);
 
-                Device::create([
+                $device = Device::create([
                     'product_id' => $product->id,
                     'second_purchase_id' => $purchase->id,
                     'imei' => $request->imei,
-                    'ram' => $request->ram,
-                    'storage' => $request->storage,
-                    'color' => $request->color,
+                    'ram_option_id' => $request->ram_option_id,
+                    'storage_option_id' => $request->storage_option_id,
+                    'color_option_id' => $colorOptionId,
                     'battery_percentage' => $request->battery_percentage,
                     'condition_grade' => $request->condition_grade,
                     'status' => 'available',
@@ -136,6 +145,7 @@ class ProductController extends Controller
                     'selling_price' => $request->selling_price,
                     'image' => $imageFiles ?: null,
                 ]);
+
             } else {
 
                 $stockQuantity = (int) ($request->stock_quantity ?? 0);
@@ -147,11 +157,11 @@ class ProductController extends Controller
                         $devices[] = [
                             'product_id' => $product->id,
                             'imei' => 'PENDING-' . $product->id . '-' . $i . '-' . uniqid(),
-                            'ram' => 'TBD',
-                            'storage' => 'TBD',
-                            'color' => 'TBD',
+                            'ram_option_id' => null,
+                            'storage_option_id' => null,
+                            'color_option_id' => null,
                             'battery_percentage' => 0,
-                            'condition_grade' => 'TBD',
+                            'condition_grade' => 'NEW',
                             'status' => 'available',
                             'selling_price' => $request->selling_price,
                             'created_at' => now(),
@@ -161,6 +171,7 @@ class ProductController extends Controller
 
                     Device::insert($devices);
                 }
+
             }
 
             DB::commit();
@@ -183,10 +194,15 @@ class ProductController extends Controller
 
     public function edit($id)
     {
-        $product = Product::with('phoneModel', 'devices')->findOrFail($id);
+        $product = Product::with(['phoneModel', 'devices' => function($q) {
+            $q->with(['ramOption', 'storageOption', 'colorOption']);
+        }])->findOrFail($id);
         $phoneModels = Phone_model::with('brand', 'category')->get();
         $products = Product::with('phoneModel.brand')->get();
-        return view('admin.product.edit', compact('product', 'phoneModels', 'products'));
+        $ramOptions = DB::table('ram_options')->orderBy('name')->get(['id', 'name', 'value']);
+        $storageOptions = DB::table('storage_options')->orderBy('name')->get(['id', 'name', 'value']);
+        $colorOptions = DB::table('color_options')->orderBy('name')->get(['id', 'name', 'value']);
+        return view('admin.product.edit', compact('product', 'phoneModels', 'products', 'ramOptions', 'storageOptions', 'colorOptions'));
     }
 
     public function update(ProductUpdateRequest $request, $id)
@@ -232,11 +248,11 @@ class ProductController extends Controller
                     $devices[] = [
                         'product_id' => $product->id,
                         'imei' => 'PENDING-' . $product->id . '-' . ($currentDeviceCount + $i) . '-' . uniqid(),
-                        'ram' => 'TBD',
-                        'storage' => 'TBD',
-                        'color' => 'TBD',
+                        'ram_option_id' => null,
+                        'storage_option_id' => null,
+                        'color_option_id' => null,
                         'battery_percentage' => 0,
-                        'condition_grade' => 'TBD',
+                        'condition_grade' => 'NEW',
                         'status' => 'available',
                         'created_at' => now(),
                         'updated_at' => now(),

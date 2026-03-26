@@ -113,9 +113,9 @@
                         $('#modal_product_id').append(`<option value="${p.id}" ${data.device.product_id == p.id ? 'selected' : ''}>${p.label}</option>`);
                     });
                     $('#modal_imei').val(data.device.imei);
-                    $('#modal_ram').val(data.device.ram);
-                    $('#modal_storage').val(data.device.storage);
-                    $('#modal_color').val(data.device.color);
+                    $('#modal_ram').val(data.device.ram_option_id || '');
+                    $('#modal_storage').val(data.device.storage_option_id || '');
+                    $('#modal_color_option_id').val(data.device.color_option_id || '');
                     $('#modal_battery_percentage').val(data.device.battery_percentage);
                     $('#modal_condition_grade').val(data.device.condition_grade);
                     $('#modal_status').val(data.device.status);
@@ -142,6 +142,14 @@
                 .fail(function() {
                     Swal.fire({ icon: 'error', title: 'Error', text: 'Failed to load device data' });
                 });
+        });
+
+        // Color select -> color input sync
+        $(document).on('change', '#modal_color_select', function () {
+            const v = $(this).val();
+            if (v) {
+                $('#modal_color').val(v);
+            }
         });
 
         $('#device-edit-form').on('submit', function (e) {

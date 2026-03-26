@@ -24,12 +24,12 @@ class UserController extends Controller
     public function store(UserCreateRequest $request)
     {
         User::create([
-            'name' => $request->name,
+            'name'  => $request->name,
             'email' => $request->email,
             'password' => Hash::make($request->password),
             'phone' => $request->phone,
             'address' => $request->address,
-            'role' => 'admin',
+            'role'  => $request->role ?? 'staff',
         ]);
 
         return response()->json([
@@ -47,6 +47,12 @@ class UserController extends Controller
             ->addIndexColumn()
             ->addColumn('action', function ($user) {
                 $id = $user->id;
+
+                $permBtn = '<a href="/admin/user/' . $id . '/permissions" 
+                    class="btn btn-sm mx-1 px-3 py-2 btn-info" 
+                    title="Manage Permissions">
+                    <i class="fas fa-shield-alt"></i>
+                </a>';
 
                 $editBtn = '<a href="#" 
                     class="btn btn-sm mx-2 px-3 py-2 btn-primary edit-user-btn" 
@@ -68,7 +74,7 @@ class UserController extends Controller
                     <i class="fa fa-trash-alt"></i>
                 </a>';
 
-                return '<div class="action-btn" role="group">' . $editBtn . ' ' . $deleteBtn . '</div>';
+                return '<div class="action-btn" role="group">' . $permBtn . ' ' . $editBtn . ' ' . $deleteBtn . '</div>';
             })
 
             ->rawColumns(['logo', 'action', 'plus-icon'])

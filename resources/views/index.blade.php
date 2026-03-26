@@ -389,18 +389,14 @@
                                     <!-- product widget -->
                                     <div class="product-widget" data-id="{{ $product->id }}">
                                         <div class="product-img">
-                                            {{-- <img src="{{ $product->imageUrl() }}" alt=""> --}}
+                                            <img src="{{ $product->imageUrl() }}" alt="">
                                         </div>
                                         <div class="product-body">
-                                            {{-- <p class="product-category">{{ $product->category->name }}</p>
-                                            <h3 class="product-name"><a href="">{{ $product->name }}</a></h3>
+                                            <p class="product-category">{{ $product->phoneModel->category->category_name ?? 'N/A' }}</p>
+                                            <h3 class="product-name"><a href="{{ route('products.show', $product->id) }}">{{ $product->phoneModel->model_name ?? 'N/A' }}</a></h3>
                                             <h4 class="product-price">
-                                                @if ($product->discount_price)
-                                                    {{ number_format($product->discount_price) }} MMK
-                                                @else
-                                                    {{ number_format($product->price) }} MMK
-                                                @endif
-                                            </h4> --}}
+                                                {{ number_format($product->selling_price) }} MMK
+                                            </h4>
                                         </div>
                                     </div>
                                     <!-- /product widget -->
@@ -425,18 +421,14 @@
                                     <!-- product widget -->
                                     <div class="product-widget" data-id="{{ $product->id }}">
                                         <div class="product-img">
-                                            {{-- <img src="{{ $product->imageUrl() }}" alt=""> --}}
+                                            <img src="{{ $product->imageUrl() }}" alt="">
                                         </div>
                                         <div class="product-body">
-                                            {{-- <p class="product-category">{{ $product->category->name }}</p>
-                                            <h3 class="product-name"><a href="">{{ $product->name }}</a></h3>
+                                            <p class="product-category">{{ $product->phoneModel->category->category_name ?? 'N/A' }}</p>
+                                            <h3 class="product-name"><a href="{{ route('products.show', $product->id) }}">{{ $product->phoneModel->model_name ?? 'N/A' }}</a></h3>
                                             <h4 class="product-price">
-                                                @if ($product->discount_price)
-                                                    {{ number_format($product->discount_price) }} MMK
-                                                @else
-                                                    {{ number_format($product->price) }} MMK
-                                                @endif
-                                            </h4> --}}
+                                                {{ number_format($product->selling_price) }} MMK
+                                            </h4>
                                         </div>
                                     </div>
                                     <!-- /product widget -->
@@ -461,21 +453,17 @@
                             <div>
                                 @foreach ($productChunk as $product)
                                     <!-- product widget -->
-                                    {{-- <div class="product-widget" data-id="{{ $product->id }}">
+                                    <div class="product-widget" data-id="{{ $product->id }}">
                                         <div class="product-img">
                                             <img src="{{ $product->imageUrl() }}" alt="">
                                         </div>
                                         <div class="product-body">
-                                            <p class="product-category">{{ $product->category->name }}</p>
-                                            <h3 class="product-name"><a href="">{{ $product->name }}</a></h3>
+                                            <p class="product-category">{{ $product->phoneModel->category->category_name ?? 'N/A' }}</p>
+                                            <h3 class="product-name"><a href="{{ route('products.show', $product->id) }}">{{ $product->phoneModel->model_name ?? 'N/A' }}</a></h3>
                                             <h4 class="product-price">
-                                                @if ($product->discount_price)
-                                                    {{ number_format($product->discount_price) }} MMK
-                                                @else
-                                                    {{ number_format($product->price) }} MMK
-                                                @endif
+                                                {{ number_format($product->selling_price) }} MMK
                                             </h4>
-                                        </div> --}}
+                                        </div>
                                     </div>
                                     <!-- /product widget -->
                                 @endforeach

@@ -2,6 +2,7 @@
 
 use App\Http\Middleware\AdminAuth;
 use App\Http\Middleware\AuthCheck;
+use App\Http\Middleware\CheckPermission;
 use App\Http\Middleware\EnsureUserHasRole;
 use App\Http\Middleware\EnsureUserIsAdmin;
 use App\Http\Middleware\RedirectIfAuthenticated;
@@ -18,11 +19,12 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware): void {
         // Alias middleware for easy use in routes
         $middleware->alias([
-            'guest' => RedirectIfAuthenticated::class,
-            'authCheck' => AuthCheck::class,
-            'adminAuth' => AdminAuth::class,
-            'admin' => EnsureUserIsAdmin::class,
-            'role' => EnsureUserHasRole::class,
+            'guest'      => RedirectIfAuthenticated::class,
+            'authCheck'  => AuthCheck::class,
+            'adminAuth'  => AdminAuth::class,
+            'admin'      => EnsureUserIsAdmin::class,
+            'role'       => EnsureUserHasRole::class,
+            'permission' => CheckPermission::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

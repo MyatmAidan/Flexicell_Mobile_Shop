@@ -17,6 +17,7 @@ use App\Http\Controllers\InstallmentRateController;
 use App\Http\Controllers\PhoneModelController;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\UserController;
+use App\Http\Controllers\UserPermissionController;
 use App\Models\Category;
 use App\Models\Product;
 use Illuminate\Http\Request;
@@ -30,7 +31,11 @@ Route::get('/', function () {
 
     $new_products = (clone $baseQuery)->orderByDesc('created_at')->take(12)->get();
     $popular_products = (clone $baseQuery)->orderByDesc('stock_quantity')->take(12)->get();
-    $best_sellers = (clone $baseQuery)->orderByDesc('selling_price')->take(12)->get();
+    $best_sellers = Product::with('phoneModel.brand', 'phoneModel.category')
+        ->withCount('devices')
+        ->orderByDesc('devices_count')
+        ->take(12)
+        ->get();
 
     return view('index', compact('categories', 'new_products', 'popular_products', 'best_sellers'));
 })->name('home');
@@ -130,8 +135,8 @@ Route::middleware(['authCheck', 'adminAuth'])->name('admin.')->group(function ()
 
         Route::get('/', [DashboardController::class, 'index'])->name('dashboard');
 
-        //user routes
-        Route::prefix('user')->group(function () {
+        // ---- User Management (superadmin only) --------------------------
+        Route::middleware('permission:users.manage')->prefix('user')->group(function () {
             Route::get('/', [UserController::class, 'index'])->name('user.index');
             Route::get('/list', [UserController::class, 'getList'])->name('user.getList');
             Route::get('/create', [UserController::class, 'create'])->name('user.create');
@@ -139,10 +144,13 @@ Route::middleware(['authCheck', 'adminAuth'])->name('admin.')->group(function ()
             Route::get('/edit/{id}', [UserController::class, 'edit'])->name('user.edit');
             Route::put('/update/{id}', [UserController::class, 'update'])->name('user.update');
             Route::delete('/{user}', [UserController::class, 'destroy'])->name('user.destroy');
+            // Custom per-user permissions
+            Route::get('/{id}/permissions', [UserPermissionController::class, 'edit'])->name('user.permissions.edit');
+            Route::put('/{id}/permissions', [UserPermissionController::class, 'update'])->name('user.permissions.update');
         });
 
-        //brand routes
-        Route::prefix('brand')->group(function () {
+        // ---- Brands (superadmin + manager) ------------------------------
+        Route::middleware('permission:brand.manage')->prefix('brand')->group(function () {
             Route::get('/', [BrandController::class, 'index'])->name('brand.index');
             Route::get('/list', [BrandController::class, 'getList'])->name('brand.getList');
             Route::get('/create', [BrandController::class, 'create'])->name('brand.create');
@@ -152,8 +160,8 @@ Route::middleware(['authCheck', 'adminAuth'])->name('admin.')->group(function ()
             Route::delete('/{brand}', [BrandController::class, 'destroy'])->name('brand.destroy');
         });
 
-        //category routes
-        Route::prefix('category')->group(function () {
+        // ---- Categories (superadmin + manager) --------------------------
+        Route::middleware('permission:category.manage')->prefix('category')->group(function () {
             Route::get('/', [CategoryController::class, 'index'])->name('category.index');
             Route::get('/list', [CategoryController::class, 'getList'])->name('category.getList');
             Route::get('/create', [CategoryController::class, 'create'])->name('category.create');
@@ -163,8 +171,8 @@ Route::middleware(['authCheck', 'adminAuth'])->name('admin.')->group(function ()
             Route::delete('/{category}', [CategoryController::class, 'destroy'])->name('category.destroy');
         });
 
-        //product routes
-        Route::prefix('product')->group(function () {
+        // ---- Products (superadmin + manager) ----------------------------
+        Route::middleware('permission:product.manage')->prefix('product')->group(function () {
             Route::get('/', [ProductController::class, 'index'])->name('product.index');
             Route::get('/list', [ProductController::class, 'getList'])->name('product.getList');
             Route::get('/create', [ProductController::class, 'create'])->name('product.create');
@@ -174,20 +182,8 @@ Route::middleware(['authCheck', 'adminAuth'])->name('admin.')->group(function ()
             Route::delete('/{product}', [ProductController::class, 'destroy'])->name('product.destroy');
         });
 
-        //device routes
-        Route::prefix('device')->group(function () {
-            Route::get('/', [DeviceController::class, 'index'])->name('device.index');
-            Route::get('/list', [DeviceController::class, 'getList'])->name('device.getList');
-            Route::get('/data/{id}', [DeviceController::class, 'getData'])->name('device.getData');
-            Route::get('/create', [DeviceController::class, 'create'])->name('device.create');
-            Route::post('/', [DeviceController::class, 'store'])->name('device.store');
-            Route::get('/edit/{id}', [DeviceController::class, 'edit'])->name('device.edit');
-            Route::put('/update/{id}', [DeviceController::class, 'update'])->name('device.update');
-            Route::delete('/{device}', [DeviceController::class, 'destroy'])->name('device.destroy');
-        });
-
-        //phone model routes
-        Route::prefix('phone-model')->group(function () {
+        // ---- Phone Models (superadmin + manager) ------------------------
+        Route::middleware('permission:phone_model.manage')->prefix('phone-model')->group(function () {
             Route::get('/', [PhoneModelController::class, 'index'])->name('phone_model.index');
             Route::get('/list', [PhoneModelController::class, 'getList'])->name('phone_model.getList');
             Route::get('/create', [PhoneModelController::class, 'create'])->name('phone_model.create');
@@ -198,8 +194,8 @@ Route::middleware(['authCheck', 'adminAuth'])->name('admin.')->group(function ()
             Route::delete('/{phoneModel}', [PhoneModelController::class, 'destroy'])->name('phone_model.destroy');
         });
 
-        //installment_rate plan routes
-        Route::prefix('installment_rate')->group(function () {
+        // ---- Installment Rates (superadmin + manager) -------------------
+        Route::middleware('permission:installment_rate.manage')->prefix('installment_rate')->group(function () {
             Route::get('/', [InstallmentRateController::class, 'index'])->name('installment_rate.index');
             Route::get('/list', [InstallmentRateController::class, 'getList'])->name('installment_rate.getList');
             Route::get('/create', [InstallmentRateController::class, 'create'])->name('installment_rate.create');
@@ -209,32 +205,47 @@ Route::middleware(['authCheck', 'adminAuth'])->name('admin.')->group(function ()
             Route::delete('/{installment_rate}', [InstallmentRateController::class, 'destroy'])->name('installment_rate.destroy');
         });
 
-        //direct sale (POS checkout)
-        Route::prefix('direct-sale')->group(function () {
+        // ---- Devices (all roles) ----------------------------------------
+        Route::middleware('permission:device.manage')->prefix('device')->group(function () {
+            Route::get('/', [DeviceController::class, 'index'])->name('device.index');
+            Route::get('/list', [DeviceController::class, 'getList'])->name('device.getList');
+            Route::get('/data/{id}', [DeviceController::class, 'getData'])->name('device.getData');
+            Route::get('/create', [DeviceController::class, 'create'])->name('device.create');
+            Route::post('/', [DeviceController::class, 'store'])->name('device.store');
+            Route::get('/edit/{id}', [DeviceController::class, 'edit'])->name('device.edit');
+            Route::put('/update/{id}', [DeviceController::class, 'update'])->name('device.update');
+            Route::delete('/{device}', [DeviceController::class, 'destroy'])->name('device.destroy');
+        });
+
+        // ---- Direct Sale / POS (all roles) ------------------------------
+        Route::middleware('permission:direct_sale.manage')->prefix('direct-sale')->group(function () {
             Route::get('/', [DirectSaleController::class, 'index'])->name('direct_sale.index');
             Route::get('/products', [DirectSaleController::class, 'searchProducts'])->name('direct_sale.products');
             Route::get('/devices', [DirectSaleController::class, 'searchDevices'])->name('direct_sale.devices');
+            Route::get('/variants/{product}', [DirectSaleController::class, 'variants'])->name('direct_sale.variants');
+            Route::get('/variants-stock', [DirectSaleController::class, 'checkVariantStock'])->name('direct_sale.variants_stock');
             Route::post('/checkout', [DirectSaleController::class, 'checkout'])->name('direct_sale.checkout');
+            Route::get('/receipt/{order}', [DirectSaleController::class, 'receipt'])->name('direct_sale.receipt');
         });
 
-        // order routes
-        Route::prefix('order')->group(function () {
+        // ---- Orders (all roles, view only for staff) --------------------
+        Route::middleware('permission:order.view')->prefix('order')->group(function () {
             Route::get('/', [OrderController::class, 'index'])->name('order.index');
             Route::get('/list', [OrderController::class, 'getList'])->name('order.getList');
             Route::get('/{id}', [OrderController::class, 'show'])->name('order.show');
             Route::get('/{id}/receipt', [OrderController::class, 'receipt'])->name('order.receipt');
         });
 
-        // installment routes
-        Route::prefix('installment')->group(function () {
+        // ---- Installments (all roles) -----------------------------------
+        Route::middleware('permission:installment.manage')->prefix('installment')->group(function () {
             Route::get('/', [InstallmentController::class, 'index'])->name('installment.index');
             Route::get('/list', [InstallmentController::class, 'getList'])->name('installment.getList');
             Route::post('/payment/{paymentId}/mark-paid', [InstallmentController::class, 'markPaid'])->name('installment.markPaid');
             Route::get('/{id}', [InstallmentController::class, 'show'])->name('installment.show');
         });
 
-        //blog routes
-        Route::prefix('blogs')->group(function () {
+        // ---- Blogs (superadmin + manager) -------------------------------
+        Route::middleware('permission:blog.manage')->prefix('blogs')->group(function () {
             Route::get('/', [BlogController::class, 'index'])->name('blogs.index');
             Route::get('/list', [BlogController::class, 'getList'])->name('blogs.getList');
             Route::get('/create', [BlogController::class, 'create'])->name('blogs.create');
@@ -246,3 +257,4 @@ Route::middleware(['authCheck', 'adminAuth'])->name('admin.')->group(function ()
         });
     });
 });
+

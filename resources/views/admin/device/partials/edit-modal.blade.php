@@ -32,21 +32,52 @@
                         <div class="col-md-6">
                             <div class="form-group mb-3">
                                 <label for="modal_ram" class="form-label">RAM <span class="text-danger">*</span></label>
-                                <input type="text" class="form-control" id="modal_ram" name="ram" placeholder="e.g. 8GB" required>
+                                <select class="form-control" id="modal_ram" name="ram_option_id" required>
+                                    <option value="">Select RAM</option>
+                                    @foreach(($ramOptions ?? []) as $opt)
+                                        <option value="{{ $opt->id }}">{{ $opt->value }}</option>
+                                    @endforeach
+                                </select>
                             </div>
                         </div>
                         <div class="col-md-6">
                             <div class="form-group mb-3">
                                 <label for="modal_storage" class="form-label">Storage <span class="text-danger">*</span></label>
-                                <input type="text" class="form-control" id="modal_storage" name="storage" placeholder="e.g. 128GB" required>
+                                <select class="form-control" id="modal_storage" name="storage_option_id" required>
+                                    <option value="">Select Storage</option>
+                                    @foreach(($storageOptions ?? []) as $opt)
+                                        <option value="{{ $opt->id }}">{{ $opt->value }}</option>
+                                    @endforeach
+                                </select>
                             </div>
                         </div>
                     </div>
                     <div class="row">
                         <div class="col-md-6">
                             <div class="form-group mb-3">
-                                <label for="modal_color" class="form-label">Color <span class="text-danger">*</span></label>
-                                <input type="color" class="form-control form-control-color w-100" id="modal_color" name="color" value="#000000" required>
+                                <label class="form-label">Color <span class="text-danger">*</span></label>
+                                <div id="modal-color-selection-wrapper">
+                                    <div class="d-flex gap-2 mb-1" id="modal-existing-color-group">
+                                        <select class="form-control" id="modal_color_option_id" name="color_option_id">
+                                            <option value="">Select Color</option>
+                                            @foreach (($colorOptions ?? []) as $opt)
+                                                <option value="{{ $opt->id }}">{{ $opt->name }}</option>
+                                            @endforeach
+                                        </select>
+                                        <button type="button" class="btn btn-sm btn-outline-primary whitespace-nowrap" id="modal-btn-toggle-new-color" title="Add New Color">
+                                            <i class="fa fa-plus"></i> New
+                                        </button>
+                                    </div>
+                                    <div class="d-none" id="modal-new-color-group">
+                                        <div class="d-flex gap-2">
+                                            <input type="text" class="form-control" id="modal_new_color_name" name="new_color_name" placeholder="Color Name">
+                                            <input type="color" class="form-control form-control-color" id="modal_new_color_value" name="new_color_value" value="#000000" title="Choose a color" style="width: 60px; height: 38px;">
+                                            <button type="button" class="btn btn-outline-secondary" id="modal-btn-cancel-new-color" title="Cancel New Color">
+                                                <i class="fa fa-times"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                         <div class="col-md-6">

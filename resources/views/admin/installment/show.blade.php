@@ -17,7 +17,7 @@
 @section('content')
 <div class="row">
     <div class="col-12 mb-3">
-        <a href="{{ route('admin.installment.index') }}" class="btn btn-sm btn-outline-secondary">
+        <a href="{{ route('admin.installment.index') }}" class="btn btn-md btn-outline-secondary">
             <i class="fas fa-arrow-left me-1"></i> Back to Installments
         </a>
     </div>
@@ -25,7 +25,7 @@
     {{-- Installment Summary --}}
     <div class="col-md-5">
         <div class="card mb-4">
-            <div class="card-header fw-semibold">
+            <div class="card-header bg-warning bg-opacity-10 text-warning font-weight-bold">
                 <iconify-icon icon="solar:bill-list-bold-duotone" class="me-1"></iconify-icon>
                 Installment #{{ str_pad($installment->id, 5, '0', STR_PAD_LEFT) }}
             </div>
@@ -95,7 +95,7 @@
     {{-- Payment Schedule --}}
     <div class="col-md-7">
         <div class="card mb-4">
-            <div class="card-header fw-semibold">
+            <div class="card-header bg-warning bg-opacity-10 text-warning font-weight-bold">
                 <i class="fas fa-calendar-alt me-1"></i> Payment Schedule
             </div>
             <div class="card-body p-0">

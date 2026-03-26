@@ -17,9 +17,9 @@ return new class extends Migration
             $table->foreignId('order_id')->nullable()->constrained()->nullOnDelete();
             $table->foreignId('second_purchase_id')->nullable()->constrained('second_phone_purchases')->nullOnDelete();
             $table->string('imei')->unique();
-            $table->string('ram');
-            $table->string('storage');
-            $table->string('color');
+            $table->foreignId('ram_option_id')->nullable()->constrained('ram_options')->nullOnDelete();
+            $table->foreignId('storage_option_id')->nullable()->constrained('storage_options')->nullOnDelete();
+            $table->foreignId('color_option_id')->nullable()->constrained('color_options')->nullOnDelete();
             $table->integer('battery_percentage');
             $table->string('condition_grade');
             $table->string('status')->default('available');

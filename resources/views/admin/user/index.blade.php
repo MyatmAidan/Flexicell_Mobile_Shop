@@ -73,8 +73,9 @@
                         <label class="form-label">Role</label>
                         <select name="role" class="form-control" required>
                             <option value="">Select Role</option>
-                            <option value="user">User</option>
-                            <option value="admin">Admin</option>
+                            <option value="superadmin">Super Admin</option>
+                            <option value="manager">Manager</option>
+                            <option value="staff">Staff</option>
                         </select>
                     </div>
 
@@ -146,8 +147,9 @@
                     <div class="mb-3">
                         <label class="form-label">Role</label>
                         <select class="form-control" id="edit_role" name="role">
-                            <option value="user">User</option>
-                            <option value="admin">Admin</option>
+                            <option value="superadmin">Super Admin</option>
+                            <option value="manager">Manager</option>
+                            <option value="staff">Staff</option>
                         </select>
                     </div>
 

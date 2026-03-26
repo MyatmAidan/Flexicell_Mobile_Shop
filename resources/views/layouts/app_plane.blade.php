@@ -36,7 +36,7 @@
         .auth-logo {
             display: block;
             margin: 0 auto 1.5rem;
-            max-width: 250px;
+            max-width: 350px;
         }
 
         .auth-title {

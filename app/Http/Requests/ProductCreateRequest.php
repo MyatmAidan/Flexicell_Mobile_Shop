@@ -28,9 +28,9 @@ class ProductCreateRequest extends FormRequest
         if ($this->input('product_type') === 'second hand') {
             $rules = array_merge($rules, [
                 'imei' => 'required|unique:devices,imei',
-                'ram' => 'required|string',
-                'storage' => 'required|string',
-                'color' => 'required|string',
+                'ram_option_id' => 'required|exists:ram_options,id',
+                'storage_option_id' => 'required|exists:storage_options,id',
+                'color_option_id' => 'required|exists:color_options,id',
                 'battery_percentage' => 'required|integer|min:0|max:100',
                 'condition_grade' => 'required|string',
                 'buy_price' => 'required|numeric|min:0',
@@ -54,9 +54,9 @@ class ProductCreateRequest extends FormRequest
             // Second-hand messages
             'imei.required' => 'IMEI is required for second-hand devices.',
             'imei.unique' => 'This IMEI already exists in the system.',
-            'ram.required' => 'RAM is required for second-hand devices.',
-            'storage.required' => 'Storage is required for second-hand devices.',
-            'color.required' => 'Color is required for second-hand devices.',
+            'ram_option_id.required' => 'RAM is required for second-hand devices.',
+            'storage_option_id.required' => 'Storage is required for second-hand devices.',
+            'color_option_id.required' => 'Color is required for second-hand devices.',
             'battery_percentage.required' => 'Battery % is required for second-hand devices.',
             'battery_percentage.integer' => 'Battery % must be a number.',
             'battery_percentage.min' => 'Battery % cannot be less than 0.',

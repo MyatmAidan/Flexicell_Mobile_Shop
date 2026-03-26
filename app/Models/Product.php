@@ -21,4 +21,13 @@ class Product extends Model
     {
         return $this->hasMany(Device::class);
     }
+
+    public function imageUrl()
+    {
+        $images = $this->image;
+        if (is_array($images) && count($images) > 0) {
+            return asset('storage/products/' . $images[0]);
+        }
+        return asset('img/logo.png'); // Placeholder
+    }
 }

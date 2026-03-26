@@ -9,6 +9,7 @@ use App\Models\Product;
 use App\Models\User;
 use App\Models\Payment;
 use App\Models\InstallmentPayment;
+use App\Models\Device;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 
@@ -32,6 +33,15 @@ class DashboardController extends Controller
         } elseif ($revenueThisMonth > 0) {
             $revenueGrowth = 100;
         }
+
+        // Available Devices
+        $totalDevices = Device::where('status', 'available')->whereNull('order_id')->count();
+        $newDevices = Device::where('status', 'available')->whereNull('order_id')
+            ->whereHas('product', fn($q) => $q->where('product_type', 'new'))
+            ->count();
+        $secondHandDevices = Device::where('status', 'available')->whereNull('order_id')
+            ->whereHas('product', fn($q) => $q->where('product_type', 'second hand'))
+            ->count();
 
         // Orders
         $totalOrders = Order::count();
@@ -109,6 +119,7 @@ class DashboardController extends Controller
             'totalOrders', 'ordersThisMonth', 'orderGrowth',
             'totalCustomers', 'newCustomersThisMonth',
             'totalProducts', 'activeProducts', 'lowStockProducts', 'outOfStockProducts',
+            'totalDevices', 'newDevices', 'secondHandDevices',
             'totalCategories', 'totalBrands', 'totalPaymentMethods',
             'completedPayments', 'pendingPayments', 'totalPaymentAmount',
             'upcomingPaymentsCount', 'overduePaymentsCount', 'totalInstallmentAmount',
