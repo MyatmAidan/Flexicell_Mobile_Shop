@@ -18,11 +18,13 @@ class ProductController extends Controller
 {
     public function index()
     {
+        $this->requirePermission('products.view');
         return view('admin.product.index');
     }
 
     public function getList()
     {
+        $this->requirePermission('products.view');
         $products = Product::with('phoneModel.brand', 'phoneModel.category');
 
         return DataTables::of($products)
@@ -58,6 +60,7 @@ class ProductController extends Controller
 
     public function create()
     {
+        $this->requirePermission('products.create');
         $phoneModels = Phone_model::with('brand', 'category')->get();
         $ramOptions = DB::table('ram_options')->orderBy('name')->get(['id', 'name', 'value']);
         $storageOptions = DB::table('storage_options')->orderBy('name')->get(['id', 'name', 'value']);
@@ -67,6 +70,7 @@ class ProductController extends Controller
 
     public function store(ProductCreateRequest $request)
     {
+        $this->requirePermission('products.create');
         try {
             DB::beginTransaction();
 
@@ -194,6 +198,7 @@ class ProductController extends Controller
 
     public function edit($id)
     {
+        $this->requirePermission('products.update');
         $product = Product::with(['phoneModel', 'devices' => function($q) {
             $q->with(['ramOption', 'storageOption', 'colorOption']);
         }])->findOrFail($id);
@@ -207,6 +212,7 @@ class ProductController extends Controller
 
     public function update(ProductUpdateRequest $request, $id)
     {
+        $this->requirePermission('products.update');
         try {
             DB::beginTransaction();
             $product = Product::findOrFail($id);
@@ -287,6 +293,7 @@ class ProductController extends Controller
 
     public function destroy($id)
     {
+        $this->requirePermission('products.delete');
         $product = Product::findOrFail($id);
 
         if ($product->image && is_array($product->image)) {

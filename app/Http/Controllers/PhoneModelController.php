@@ -14,16 +14,19 @@ class PhoneModelController extends Controller
 {
     public function index()
     {
+        $this->requirePermission('phone_models.view');
         return view('admin.phone_model.index');
     }
     public function create()
     {
+        $this->requirePermission('phone_models.create');
         $brands = Brands::all();
         $categories = Category::all();
         return view('admin.phone_model.create', compact('brands', 'categories'));
     }
     public function edit($id)
     {
+        $this->requirePermission('phone_models.update');
         $phoneModel = Phone_model::findOrFail($id);
         $brands = Brands::all();
         $categories = Category::all();
@@ -31,6 +34,7 @@ class PhoneModelController extends Controller
     }
     public function show($id)
     {
+        $this->requirePermission('phone_models.view');
         $phoneModel = Phone_model::with('brand', 'category')->findOrFail($id);
         return view('admin.phone_model.show', compact('phoneModel'));
     }
@@ -38,6 +42,7 @@ class PhoneModelController extends Controller
 
     public function store(PhoneModelCreateRequest $request)
     {
+        $this->requirePermission('phone_models.create');
         try {
             $imageFiles = [];
 
@@ -102,6 +107,7 @@ class PhoneModelController extends Controller
 
     public function update(PhoneModelUpdateRequest $request, $id)
     {
+        $this->requirePermission('phone_models.update');
         $phoneModel = Phone_model::findOrFail($id);
 
         $existingImages = is_array($phoneModel->image) ? $phoneModel->image : ($phoneModel->image ? (array) $phoneModel->image : []);
@@ -164,6 +170,7 @@ class PhoneModelController extends Controller
 
     public function destroy($id)
     {
+        $this->requirePermission('phone_models.delete');
         $phoneModel = Phone_model::findOrFail($id);
         $phoneModel->delete();
 
@@ -173,6 +180,7 @@ class PhoneModelController extends Controller
     }
     public function getList()
     {
+        $this->requirePermission('phone_models.view');
         $phoneModels = Phone_model::with(['brand', 'category']);
 
         return datatables()->of($phoneModels)

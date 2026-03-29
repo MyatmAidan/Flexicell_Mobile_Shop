@@ -11,8 +11,73 @@
 <style>
     .pos-panel { min-height: 70vh; }
     .pos-scroll { max-height: 60vh; overflow: auto; }
-    .pos-product-item { cursor: pointer; }
+    .pos-product-item { cursor: pointer; transition: transform 0.2s; border: 1px solid #eee; }
+    .pos-product-item:hover { transform: translateY(-3px); box-shadow: 0 4px 12px rgba(0,0,0,0.08) !important; }
     .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; }
+
+    /* Variant Selection Styling */
+    .variant-group-label { font-size: 0.85rem; font-weight: 600; color: #666; margin-bottom: 8px; display: block; }
+    .variant-tiles { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px; }
+    
+    /* Radio Tile */
+    .variant-tile-input { display: none; }
+    .variant-tile-label {
+        padding: 8px 16px;
+        border: 2px solid #edeff2;
+        border-radius: 8px;
+        cursor: pointer;
+        font-size: 0.9rem;
+        transition: all 0.2s;
+        background: #fff;
+        user-select: none;
+        min-width: 60px;
+        text-align: center;
+    }
+    .variant-tile-input:checked + .variant-tile-label {
+        border-color: #0d6efd;
+        background-color: #f0f7ff;
+        color: #0d6efd;
+        font-weight: 600;
+        box-shadow: 0 2px 4px rgba(13, 110, 253, 0.1);
+    }
+    .variant-tile-label:hover { border-color: #cbd3da; }
+
+    /* Color Swatch */
+    .color-swatches { display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 16px; }
+    .color-swatch-input { display: none; }
+    .color-swatch-label {
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+        cursor: pointer;
+        position: relative;
+        transition: all 0.2s;
+        border: 2px solid #edeff2;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    .color-swatch-input:checked + .color-swatch-label {
+        border-color: #0d6efd;
+        transform: scale(1.1);
+        box-shadow: 0 0 0 2px #fff, 0 0 0 4px #0d6efd;
+    }
+    .color-swatch-label .check-mark {
+        color: #fff;
+        font-size: 14px;
+        display: none;
+        text-shadow: 0 1px 2px rgba(0,0,0,0.5);
+    }
+    .color-swatch-input:checked + .color-swatch-label .check-mark { display: block; }
+    
+    #modalVariantImg {
+        width: 100%;
+        height: 200px;
+        object-fit: contain;
+        background: #f8f9fa;
+        border-radius: 12px;
+        margin-bottom: 15px;
+    }
 </style>
 @endsection
 
@@ -173,41 +238,45 @@
                 </div>
                 <div class="modal-body">
                     <input type="hidden" id="variantProductId">
-                    <div class="mb-2 fw-semibold" id="variantProductName"></div>
+                    
+                    <div class="text-center mb-3">
+                        <img id="modalVariantImg" src="" alt="Product Image" onerror="this.src='https://via.placeholder.com/300?text=No+Photo'">
+                        <h5 class="fw-bold mb-0" id="variantProductName"></h5>
+                    </div>
 
-                    <div class="row g-2">
+                    <div class="mb-3">
+                        <label class="variant-group-label">Select RAM</label>
+                        <div class="variant-tiles" id="variantRamList"></div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="variant-group-label">Select Storage</label>
+                        <div class="variant-tiles" id="variantStorageList"></div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="variant-group-label d-flex justify-content-between align-items-center">
+                            <span>Select Color</span>
+                            <span id="selectedColorName" class="fw-bold px-2 py-1 rounded" style="font-size: 0.8rem; background-color: #eee; color: #333;">Any</span>                        </label>
+                        <div class="color-swatches" id="variantColorList"></div>
+                    </div>
+
+                    <div class="row align-items-center g-3">
                         <div class="col-6">
-                            <label class="form-label">RAM</label>
-                            <select class="form-control variant-option" id="variantRam">
-                                <option value="">Any</option>
-                            </select>
-                        </div>
-                        <div class="col-6">
-                            <label class="form-label">Storage</label>
-                            <select class="form-control variant-option" id="variantStorage">
-                                <option value="">Any</option>
-                            </select>
-                        </div>
-                        <div class="col-6">
-                            <label class="form-label">Color</label>
-                            <select class="form-control variant-option" id="variantColor">
-                                <option value="">Any</option>
-                            </select>
-                        </div>
-                        <div class="col-6">
-                            <label class="form-label">Qty</label>
+                            <label class="variant-group-label mb-0">Quantity</label>
                             <input type="number" class="form-control" id="variantQty" min="1" value="1">
                         </div>
+                        <div class="col-6">
+                            <div class="p-2 border rounded bg-light" id="variantStockStatusBox">
+                                <span class="d-block text-muted" style="font-size: 0.7rem;">AVAILABILITY</span>
+                                <span id="variantStockDisplay" class="fw-bold">-</span>
+                            </div>
+                        </div>
                     </div>
 
-                    <div class="mt-3 p-2 border rounded bg-light d-flex justify-content-between align-items-center" id="variantStockStatusBox">
-                        <span class="text-muted small">Availability</span>
-                        <span id="variantStockDisplay" class="fw-bold">-</span>
-                    </div>
-
-                    <small class="text-muted d-block mt-2">
-                        Only available devices with real IMEI are allocated (PENDING devices are blocked).
-                    </small>
+                    {{-- <div class="alert alert-info py-2 px-3 mt-3 mb-0" style="font-size: 0.8rem;">
+                        <i class="fas fa-info-circle me-1"></i> Only devices with valid IMEI are allocated.
+                    </div> --}}
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
@@ -298,6 +367,36 @@
             });
             calcTotals();
         }
+
+        const renderSwatches = (container, items) => {
+            const $c = $(container).empty();
+            $c.append(`
+                <div class="color-swatch">
+                    <input type="radio" name="variant_color" id="color_any" value="" class="color-swatch-input variant-option" checked>
+                    <label for="color_any" class="color-swatch-label" style="background:#eee; color:#666;" title="Any">
+                        <i class="fas fa-ban fa-xs"></i>
+                    </label>
+                </div>
+            `);
+            (items || []).forEach(x => {
+                $c.append(`
+                    <div class="color-swatch">
+                        <input 
+                            type="radio" 
+                            name="variant_color" 
+                            id="color_${x.id}" 
+                            value="${x.id}" 
+                            data-label="${x.name}" 
+                            data-value="${x.value}" 
+                            class="color-swatch-input variant-option"
+                        >
+                        <label for="color_${x.id}" class="color-swatch-label" style="background-color: ${x.value};" title="${x.name}">
+                            <i class="fas fa-check check-mark"></i>
+                        </label>
+                    </div>
+                `);
+            });
+        };
 
         function upsertQtyProduct(product, quantity) {
             const key = `p-${product.id}`;
@@ -409,27 +508,71 @@
                 Swal.fire({ icon: 'warning', title: 'Out of stock', text: 'This product has no stock.' });
                 return;
             }
-            // Open variant modal to pick ram/storage/color + qty
+            
+            // Set image and name
+            const imgUrl = product.image ? `${productImageBase}/${product.image}` : 'https://via.placeholder.com/300?text=No+Photo';
+            $('#modalVariantImg').attr('src', imgUrl);
+            $('#variantProductId').val(product.id);
+            $('#variantProductName').text(`${product.brand} - ${product.label}`);
+            $('#variantQty').val(1);
+
+            // Fetch variants and populate radios
             $.get(urls.variants.replace('__id__', product.id))
                 .done(function(res) {
                     const v = res.data;
-                    $('#variantProductId').val(product.id);
-                    $('#variantProductName').text(`${product.label} - ${product.brand}`);
-                    $('#variantQty').val(1);
-
-                    const fillSelect = (sel, items) => {
-                        const $s = $(sel);
-                        $s.empty().append('<option value=\"\">Any</option>');
+                    
+                    const renderTiles = (container, items, name) => {
+                        const $c = $(container).empty();
+                        // Add "Any" option
+                        $c.append(`
+                            <div class="variant-tile shadow-sm">
+                                <input type="radio" name="${name}" id="${name}_any" value="" class="variant-tile-input variant-option" checked>
+                                <label for="${name}_any" class="variant-tile-label">Any</label>
+                            </div>
+                        `);
                         (items || []).forEach(x => {
-                            if (x.id) $s.append(`<option value=\"${x.id}\">${x.value}</option>`);
+                            $c.append(`
+                                <div class="variant-tile shadow-sm">
+                                    <input type="radio" name="${name}" id="${name}_${x.id}" value="${x.id}" data-label="${x.name}" class="variant-tile-input variant-option">
+                                    <label for="${name}_${x.id}" class="variant-tile-label">${x.name}</label>
+                                </div>
+                            `);
                         });
                     };
-                    fillSelect('#variantRam', v.ram);
-                    fillSelect('#variantStorage', v.storage);
-                    fillSelect('#variantColor', v.color);
+
+                    const renderSwatches = (container, items) => {
+                        const $c = $(container).empty();
+                        $c.append(`
+                            <div class="color-swatch">
+                                <input type="radio" name="variant_color" id="color_any" value="" class="color-swatch-input variant-option" checked>
+                                <label for="color_any" class="color-swatch-label" style="background:#eee; color:#666;" title="Any">
+                                    <i class="fas fa-ban fa-xs"></i>
+                                </label>
+                            </div>
+                        `);
+                        (items || []).forEach(x => {
+                            $c.append(`
+                                <div class="color-swatch">
+                                    <input type="radio" name="variant_color" id="color_${x.id}" value="${x.id}" data-label="${x.name}" class="color-swatch-input variant-option">
+                                    <label for="color_${x.id}" class="color-swatch-label" style="background-color: ${x.value};" title="${x.name}">
+                                        <i class="fas fa-check check-mark"></i>
+                                    </label>
+                                </div>
+                            `);
+                        });
+                    };
+
+                    renderTiles('#variantRamList', v.ram, 'variant_ram');
+                    renderTiles('#variantStorageList', v.storage, 'variant_storage');
+                    renderSwatches('#variantColorList', v.color);
 
                     variantModal.show();
-                    checkVariantStock(); // Initial check
+                    checkVariantStock(); 
+
+                    // Attach change listener to new radios
+                    $('.variant-option').on('change', function() {
+                        checkVariantStock();
+                    });
                 })
                 .fail(function() {
                     upsertQtyProduct(product, 1);
@@ -443,9 +586,13 @@
 
         function checkVariantStock() {
             const productId = $('#variantProductId').val();
-            const ram = $('#variantRam').val();
-            const storage = $('#variantStorage').val();
-            const color = $('#variantColor').val();
+            const ram = $('input[name="variant_ram"]:checked').val();
+            const storage = $('input[name="variant_storage"]:checked').val();
+            const color = $('input[name="variant_color"]:checked').val();
+            const colorName = $('input[name="variant_color"]:checked').data('label') || 'Any';
+
+            // Update UI
+            $('#selectedColorName').text(colorName);
 
             $('#variantStockDisplay').html('<span class="spinner-border spinner-border-sm text-secondary"></span>');
             $('#variantAddBtn').prop('disabled', true);
@@ -649,12 +796,15 @@
             const product = productCache[productId];
             if (!product) return;
             const qty = Math.max(1, Number($('#variantQty').val() || 1));
-            const ram_id = $('#variantRam').val() || null;
-            const ram_val = $('#variantRam option:selected').text();
-            const storage_id = $('#variantStorage').val() || null;
-            const storage_val = $('#variantStorage option:selected').text();
-            const color_id = $('#variantColor').val() || null;
-            const color_val = $('#variantColor option:selected').text();
+            
+            const ram_id = $('input[name="variant_ram"]:checked').val() || null;
+            const ram_val = $('input[name="variant_ram"]:checked').data('label');
+            
+            const storage_id = $('input[name="variant_storage"]:checked').val() || null;
+            const storage_val = $('input[name="variant_storage"]:checked').data('label');
+            
+            const color_id = $('input[name="variant_color"]:checked').val() || null;
+            const color_val = $('input[name="variant_color"]:checked').data('label');
 
             const key = `p-${product.id}-${ram_id || 'any'}-${storage_id || 'any'}-${color_id || 'any'}`;
             const existing = cart.find(x => x.key === key);

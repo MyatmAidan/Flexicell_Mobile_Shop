@@ -21,6 +21,7 @@ class DirectSaleController extends Controller
 {
     public function index()
     {
+        $this->requirePermission('direct_sales.view');
         $installmentRates = InstallmentRate::query()
             ->orderBy('month_option')
             ->get(['id', 'month_option', 'rate']);
@@ -30,6 +31,7 @@ class DirectSaleController extends Controller
 
     public function searchProducts()
     {
+        $this->requirePermission('direct_sales.view');
         $q = request('q');
 
         $products = Product::query()
@@ -80,6 +82,7 @@ class DirectSaleController extends Controller
 
     public function searchDevices()
     {
+        $this->requirePermission('direct_sales.view');
         $imei = request('imei');
         if (!$imei) {
             return response()->json(['data' => null]);
@@ -124,6 +127,7 @@ class DirectSaleController extends Controller
 
     public function checkVariantStock(Request $request)
     {
+        $this->requirePermission('direct_sales.view');
         $productId = $request->product_id;
         $ram = $request->ram;
         $storage = $request->storage;
@@ -149,40 +153,61 @@ class DirectSaleController extends Controller
     
     public function variants(Product $product)
     {
+        $this->requirePermission('direct_sales.view');
         $rows = DB::table('devices as d')
             ->leftJoin('ram_options as ro', 'ro.id', '=', 'd.ram_option_id')
             ->leftJoin('storage_options as so', 'so.id', '=', 'd.storage_option_id')
             ->leftJoin('color_options as co', 'co.id', '=', 'd.color_option_id')
             ->where('d.product_id', $product->id)
+            ->where('d.status', 'available')
+            ->whereNull('d.order_id')
             ->select([
-                'ro.id as ram_id', 'ro.value as ram_value',
-                'so.id as storage_id', 'so.value as storage_value',
-                'co.id as color_id', 'co.value as color_value',
+                'ro.id as ram_id', 'ro.name as ram_name', 'ro.value as ram_value',
+                'so.id as storage_id', 'so.name as storage_name', 'so.value as storage_value',
+                'co.id as color_id', 'co.name as color_name', 'co.value as color_value',
             ])
+            ->distinct()
             ->get();
 
         $ram = []; $storage = []; $color = [];
         
         foreach ($rows as $row) {
-            if ($row->ram_id) $ram[$row->ram_id] = $row->ram_value;
-            if ($row->storage_id) $storage[$row->storage_id] = $row->storage_value;
-            if ($row->color_id) $color[$row->color_id] = $row->color_value;
+            if ($row->ram_id) {
+                $ram[$row->ram_id] = [
+                    'id'    => $row->ram_id,
+                    'name'  => $row->ram_name,
+                    'value' => $row->ram_value,
+                ];
+            }
+            if ($row->storage_id) {
+                $storage[$row->storage_id] = [
+                    'id'    => $row->storage_id,
+                    'name'  => $row->storage_name,
+                    'value' => $row->storage_value,
+                ];
+            }
+            if ($row->color_id) {
+                $color[$row->color_id] = [
+                    'id'    => $row->color_id,
+                    'name'  => $row->color_name,
+                    'value' => $row->color_value,
+                ];
+            }
         }
-
-        $map = fn($arr) => collect($arr)->map(fn($v, $id) => ['id' => $id, 'value' => $v])->values();
 
         return response()->json([
             'data' => [
                 'product_id' => $product->id,
-                'ram' => $map($ram),
-                'storage' => $map($storage),
-                'color' => $map($color),
+                'ram'        => array_values($ram),
+                'storage'    => array_values($storage),
+                'color'      => array_values($color),
             ],
         ]);
     }
 
     public function receipt(Order $order)
     {
+        $this->requirePermission('direct_sales.view');
         $order->load([
             'items.product.phoneModel.brand',
             'items.device',
@@ -196,6 +221,7 @@ class DirectSaleController extends Controller
 
     public function checkout(DirectSaleCheckoutRequest $request)
     {
+        $this->requirePermission('direct_sales.create');
         $payload = $request->validated();
         $userId = Auth::id();
 

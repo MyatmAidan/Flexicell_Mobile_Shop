@@ -9,11 +9,13 @@ class OrderController extends Controller
 {
     public function index()
     {
+        $this->requirePermission('orders.view');
         return view('admin.order.index');
     }
 
     public function getList(Request $request)
     {
+        $this->requirePermission('orders.view');
         $query = Order::with(['items', 'installment', 'customer'])
             ->orderByDesc('id');
 
@@ -98,6 +100,7 @@ class OrderController extends Controller
 
     public function show($id)
     {
+        $this->requirePermission('orders.view');
         $order = Order::with([
             'items.product.phoneModel.brand',
             'items.device',
@@ -110,6 +113,7 @@ class OrderController extends Controller
 
     public function receipt($id)
     {
+        $this->requirePermission('orders.view');
         $order = Order::with([
             'items.product.phoneModel.brand',
             'items.device',

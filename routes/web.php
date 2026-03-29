@@ -20,6 +20,7 @@ use App\Http\Controllers\UserController;
 use App\Http\Controllers\UserPermissionController;
 use App\Models\Category;
 use App\Models\Product;
+use App\Models\Brand;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -77,6 +78,7 @@ Route::get('/trade-in/estimate', function () {
 
 Route::get('/products/search', function (Request $request) {
     $categories = Category::all();
+    $brands = \App\Models\Brand::all();
 
     $query = Product::with('phoneModel.brand', 'phoneModel.category');
 
@@ -87,16 +89,26 @@ Route::get('/products/search', function (Request $request) {
         });
     }
 
+    if ($request->filled('brand_id')) {
+        $brandId = $request->input('brand_id');
+        $query->whereHas('phoneModel', function ($q) use ($brandId) {
+            $q->where('brand_id', $brandId);
+        });
+    }
+
     if ($request->filled('query')) {
         $term = $request->input('query');
         $query->whereHas('phoneModel', function ($q) use ($term) {
-            $q->where('model_name', 'like', '%' . $term . '%');
+            $q->where('model_name', 'like', '%' . $term . '%')
+                ->orWhereHas('brand', function ($qb) use ($term) {
+                    $qb->where('brand_name', 'like', '%' . $term . '%');
+                });
         });
     }
 
     $products = $query->orderByDesc('created_at')->get();
 
-    return view('search', compact('products', 'categories'));
+    return view('search', compact('products', 'categories', 'brands'));
 })->name('products.search');
 
 Route::get('/products/{product}', function (Product $product) {
@@ -147,6 +159,17 @@ Route::middleware(['authCheck', 'adminAuth'])->name('admin.')->group(function ()
             // Custom per-user permissions
             Route::get('/{id}/permissions', [UserPermissionController::class, 'edit'])->name('user.permissions.edit');
             Route::put('/{id}/permissions', [UserPermissionController::class, 'update'])->name('user.permissions.update');
+        });
+
+        // ---- Role Management (superadmin only) --------------------------
+        Route::middleware('permission:roles.manage')->prefix('role')->group(function () {
+            Route::get('/', [\App\Http\Controllers\RoleController::class, 'index'])->name('role.index');
+            Route::get('/list', [\App\Http\Controllers\RoleController::class, 'getList'])->name('role.getList');
+            Route::get('/create', [\App\Http\Controllers\RoleController::class, 'create'])->name('role.create');
+            Route::post('/', [\App\Http\Controllers\RoleController::class, 'store'])->name('role.store');
+            Route::get('/edit/{id}', [\App\Http\Controllers\RoleController::class, 'edit'])->name('role.edit');
+            Route::put('/update/{id}', [\App\Http\Controllers\RoleController::class, 'update'])->name('role.update');
+            Route::delete('/{role}', [\App\Http\Controllers\RoleController::class, 'destroy'])->name('role.destroy');
         });
 
         // ---- Brands (superadmin + manager) ------------------------------
@@ -257,4 +280,3 @@ Route::middleware(['authCheck', 'adminAuth'])->name('admin.')->group(function ()
         });
     });
 });
-

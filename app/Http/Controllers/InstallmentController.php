@@ -10,11 +10,13 @@ class InstallmentController extends Controller
 {
     public function index()
     {
+        $this->requirePermission('installments.view');
         return view('admin.installment.index');
     }
 
     public function getList(Request $request)
     {
+        $this->requirePermission('installments.view');
         $query = Installment::with(['order.customer', 'rate', 'payments'])
             ->orderByDesc('id');
 
@@ -98,6 +100,7 @@ class InstallmentController extends Controller
 
     public function show($id)
     {
+        $this->requirePermission('installments.view');
         $installment = Installment::with([
             'order.items.product.phoneModel.brand',
             'order.items.device',
@@ -110,6 +113,7 @@ class InstallmentController extends Controller
 
     public function markPaid($paymentId)
     {
+        $this->requirePermission('installments.update');
         $payment = InstallmentPayment::with('installment')->findOrFail($paymentId);
 
         if ($payment->status === 'paid') {

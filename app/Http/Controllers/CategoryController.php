@@ -11,11 +11,13 @@ class CategoryController extends Controller
 {
     public function index()
     {
+        $this->requirePermission('categories.view');
         return view('admin.category.index');
     }
 
     public function store(CategoryCreateRequest $request)
     {
+        $this->requirePermission('categories.create');
         $data = $request->validated();
 
         Category::create($data);
@@ -29,6 +31,7 @@ class CategoryController extends Controller
 
     public function update(CategoryUpdateRequest $request, $id)
     {
+        $this->requirePermission('categories.update');
         $category = Category::findOrFail($id);
 
         $category->update([
@@ -44,6 +47,7 @@ class CategoryController extends Controller
 
     public function edit($id)
     {
+        $this->requirePermission('categories.update');
         $category = Category::findOrFail($id);
 
         return response()->json([
@@ -54,6 +58,7 @@ class CategoryController extends Controller
 
     public function destroy($id)
     {
+        $this->requirePermission('categories.delete');
         $category = Category::findOrFail($id);
 
         $category->delete();
@@ -65,6 +70,7 @@ class CategoryController extends Controller
 
     public function getList()
     {
+        $this->requirePermission('categories.view');
         $categories = Category::withCount('products');
 
         return DataTables::of($categories)
@@ -93,6 +99,7 @@ class CategoryController extends Controller
 
     public function create()
     {
+        $this->requirePermission('categories.create');
         return view('admin.category.create');
     }
 }

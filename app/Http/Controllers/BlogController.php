@@ -15,11 +15,13 @@ class BlogController extends Controller
 {
     public function index()
     {
+        $this->requirePermission('blogs.view');
         return view('admin.blogs.index');
     }
 
     public function getList()
     {
+        $this->requirePermission('blogs.view');
         $blogs = Blog::withCount('contents');
 
         return DataTables::of($blogs)
@@ -49,11 +51,13 @@ class BlogController extends Controller
 
     public function create()
     {
+        $this->requirePermission('blogs.create');
         return view('admin.blogs.create');
     }
 
     public function store(BlogCreateRequest $request)
     {
+        $this->requirePermission('blogs.create');
         try {
             DB::beginTransaction();
 
@@ -106,18 +110,21 @@ class BlogController extends Controller
 
     public function show(Blog $blog)
     {
+        $this->requirePermission('blogs.view');
         $contents = $blog->contents()->with('images')->get();
         return view('admin.blogs.show', compact('blog', 'contents'));
     }
 
     public function edit(Blog $blog)
     {
+        $this->requirePermission('blogs.update');
         $contents = $blog->contents()->with('images')->get();
         return view('admin.blogs.edit', compact('blog', 'contents'));
     }
 
     public function update(BlogUpdateRequest $request, Blog $blog)
     {
+        $this->requirePermission('blogs.update');
         try {
             DB::beginTransaction();
 
@@ -212,6 +219,7 @@ class BlogController extends Controller
 
     public function destroy(Blog $blog)
     {
+        $this->requirePermission('blogs.delete');
         try {
             // Delete thumbnail
             if ($blog->thumbnail) {

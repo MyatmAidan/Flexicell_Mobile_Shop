@@ -2,17 +2,22 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Concerns\HasUlids;
+use Spatie\Permission\Models\Permission as SpatiePermission;
 
-class Permission extends Model
+class Permission extends SpatiePermission
 {
-    protected $guarded = ['id'];
+    use HasUlids;
 
-    /**
-     * Get all roles that have this permission.
-     */
-    public function roles()
-    {
-        return $this->hasMany(RolePermission::class);
-    }
+    protected $fillable = [
+        'name',
+        'guard_name',
+        'label',
+    ];
+
+    protected $casts = [
+        'id' => 'string',
+    ];
+
+    public $incrementing = false;
 }

@@ -16,7 +16,59 @@ class UserPermissionController extends Controller
         $user        = User::findOrFail($id);
         $permissions = $user->getAllPermissionsWithStatus();
 
-        return view('admin.user.permissions', compact('user', 'permissions'));
+        $groupedPermissions = $this->groupPermissions($permissions);
+
+        return view('admin.user.permissions', compact('user', 'groupedPermissions'));
+    }
+
+    private function groupPermissions($permissions)
+    {
+        $actionMap = [
+            'view'   => 'view',
+            'create' => 'create',
+            'update' => 'edit',
+            'edit'   => 'edit',
+            'delete' => 'delete',
+            'manage' => 'edit',
+        ];
+
+        $groups = [];
+
+        foreach ($permissions as $perm) {
+            $name = $perm['name'];
+            $dotPos = strpos($name, '.');
+
+            if ($dotPos === false) {
+                $module = $name;
+                $action = 'other';
+            } else {
+                $module = substr($name, 0, $dotPos);
+                $actionPart = strtolower(substr($name, $dotPos + 1));
+                $action = $actionMap[$actionPart] ?? 'other';
+            }
+
+            if (!isset($groups[$module])) {
+                $groups[$module] = [
+                    'module'      => $module,
+                    'displayName' => str_replace(['_', '-'], ' ', ucfirst($module)),
+                    'view'        => null,
+                    'create'      => null,
+                    'edit'        => null,
+                    'delete'      => null,
+                    'other'       => [],
+                ];
+            }
+
+            if ($action !== 'other' && $groups[$module][$action] === null) {
+                $groups[$module][$action] = $perm;
+            } else {
+                $groups[$module]['other'][] = $perm;
+            }
+        }
+
+        ksort($groups);
+
+        return $groups;
     }
 
     /**

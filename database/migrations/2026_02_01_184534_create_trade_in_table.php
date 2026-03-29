@@ -13,7 +13,7 @@ return new class extends Migration
     {
         Schema::create('trade_ins', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('user_id')->constrained()->cascadeOnDelete();
+            $table->foreignUlid('user_id')->constrained()->cascadeOnDelete();
             $table->foreignId('phone_model_id')->constrained()->cascadeOnDelete();
             $table->string('imei')->unique();
             $table->decimal('final_price', 10, 2)->nullable();

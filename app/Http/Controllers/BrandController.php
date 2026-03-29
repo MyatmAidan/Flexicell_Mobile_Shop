@@ -12,17 +12,20 @@ class BrandController extends Controller
 {
     public function index()
     {
+        $this->requirePermission('brands.view');
         $brands = Brands::all();
         return view('admin.brand.index', compact('brands'));
     }
 
     public function create()
     {
+        $this->requirePermission('brands.create');
         return view('admin.brand.create');
     }
 
     public function store(BrandCreateRequest $request)
     {
+        $this->requirePermission('brands.create');
         Brands::create([
             'brand_name' => $request->brand_name,
             'logo' => $request->file('logo')?->store('brands', 'public'),
@@ -37,6 +40,7 @@ class BrandController extends Controller
 
     public function getList()
     {
+        $this->requirePermission('brands.view');
         $brands = Brands::withCount('products')->get();
         return DataTables::of($brands)
             ->addColumn('plus-icon', function ($brand) {
@@ -82,6 +86,7 @@ class BrandController extends Controller
      */
     public function edit(string $id)
     {
+        $this->requirePermission('brands.update');
         $brand = Brands::findOrFail($id);
         return view('admin.brand.edit', compact('brand'));
     }
@@ -91,6 +96,7 @@ class BrandController extends Controller
      */
     public function update(BrandUpdateRequest $request, string $id)
     {
+        $this->requirePermission('brands.update');
         try {
             $brand = Brands::findOrFail($id);
             $data = [
@@ -126,6 +132,7 @@ class BrandController extends Controller
 
     public function destroy(string $id)
     {
+        $this->requirePermission('brands.delete');
         $brand = Brands::findOrFail($id);
 
         // Delete logo from storage if exists

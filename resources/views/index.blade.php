@@ -2,17 +2,108 @@
 @section('title', 'Home')
 @section('style')
     <style>
-        .product-img {
+        .product-card {
+            background: #fff;
+            border-radius: 12px;
+            overflow: hidden;
+            transition: all 0.3s ease;
+            border: 1px solid #eee;
+            margin-bottom: 30px;
             position: relative;
         }
-
-        .brand {
+        .product-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+        }
+        .product-img-container {
+            position: relative;
+            height: 250px;
+            background: #f8f9fa;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        .product-img-container img {
+            max-height: 100%;
+            object-fit: contain;
+        }
+        .brand-logo-small {
             position: absolute;
-            max-width: 30px;
-            height: 30px;
-            top: 10px;
-            right: 10px;
-            border-radius: 10px;
+            top: 15px;
+            right: 15px;
+            width: 35px;
+            height: 35px;
+            background: #fff;
+            border-radius: 8px;
+            padding: 5px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+            z-index: 2;
+        }
+        .sold-out-overlay {
+            position: absolute;
+            top: 15px;
+            left: 15px;
+            background: #000;
+            color: #fff;
+            padding: 5px 12px;
+            font-size: 11px;
+            font-weight: 700;
+            border-radius: 4px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            z-index: 2;
+        }
+        .product-info {
+            padding: 20px;
+        }
+        .product-category-text {
+            font-size: 12px;
+            color: #888;
+            margin-bottom: 5px;
+            text-transform: uppercase;
+            font-weight: 500;
+        }
+        .product-name-text {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 10px;
+            color: #333;
+            display: -webkit-box;
+            -webkit-line-clamp: 1;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+        .product-price-text {
+            font-size: 18px;
+            font-weight: 700;
+            color: #D10024;
+            margin-bottom: 15px;
+        }
+        .color-swatches {
+            display: flex;
+            gap: 6px;
+            margin-bottom: 15px;
+        }
+        .color-swatch-dot {
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+            border: 1px solid #ddd;
+        }
+        .section-title .title {
+            position: relative;
+            padding-bottom: 15px;
+            margin-bottom: 30px;
+        }
+        .section-title .title:after {
+            content: "";
+            position: absolute;
+            left: 0;
+            bottom: 0;
+            height: 3px;
+            width: 50px;
+            background-color: #D10024;
         }
     </style>
 @endsection
@@ -46,101 +137,79 @@
     </div>
     <!-- /SECTION -->
 
-    <!-- SECTION -->
+    <!-- NEW ARRIVALS SECTION -->
     <div class="section">
-        <!-- container -->
         <div class="container">
-            <!-- row -->
             <div class="row">
-
-                <!-- section title -->
                 <div class="col-md-12">
                     <div class="section-title">
                         <h3 class="title">New Arrivals</h3>
-                        <div class="section-nav">
-                            <ul class="section-tab-nav tab-nav">
-                                @foreach ($categories as $key => $category)
-                                    <li class="{{ $key == 0 ? 'active' : '' }}"><a data-toggle="tab"
-                                            href="#tab1">{{ $category->name }}</a></li>
-                                @endforeach
-                            </ul>
-                        </div>
                     </div>
                 </div>
-                <!-- /section title -->
 
-                <!-- Products tab & slick -->
                 <div class="col-md-12">
                     <div class="row">
-                        <div class="products-tabs">
-                            <!-- tab -->
-                            <div id="tab1" class="tab-pane active">
-                                <div class="products-slick" data-nav="#slick-nav-1">
-                                    @foreach ($new_products as $product)
-                                        <!-- product -->
+                        @foreach ($new_products as $product)
+                            @php
+                                $phoneModel = $product->phoneModel;
+                                $brand = $phoneModel?->brand;
+                                $images = is_array($product->image) ? $product->image : (array) json_decode($product->image, true);
+                                $firstImage = $images[0] ?? null;
+                                $availableColors = $phoneModel->available_color ?? [];
+                                $isSoldOut = ($product->product_type === 'new' && $product->stock_quantity <= 0) ||
+                                             ($product->product_type !== 'new' && $product->devices()->where('status', 'available')->count() <= 0);
+                            @endphp
 
-                                        <div class="product">
-                                            <div class="product-img">
-                                                @php
-                                                    $phoneModel = $product->phoneModel;
-                                                    $brand = $phoneModel?->brand;
-                                                    $images = is_array($product->image) ? $product->image : (array) json_decode($product->image, true);
-                                                    $firstImage = $images[0] ?? null;
-                                                @endphp
-                                                @if ($brand && $brand->logo)
-                                                    <img src="{{ $brand->logoUrl() }}"
-                                                        alt="{{ $brand->brand_name ?? '' }}" class="brand">
-                                                @endif
-                                                @if ($firstImage)
-                                                    <img src="{{ asset('storage/products/' . $firstImage) }}" alt="">
-                                                @endif
-                                                @if ($product->warranty_month)
-                                                    <div class="product-label">
-                                                        <span class="sale">{{ $product->warranty_month }}M Warranty</span>
-                                                    </div>
-                                                @endif
-                                            </div>
-                                            <div class="product-body">
-                                                <p class="product-category">{{ $phoneModel?->category?->category_name }}</p>
-                                                <h3 class="product-name">
-                                                    <a href="{{ route('products.show', $product->id) }}">
-                                                        {{ $phoneModel?->model_name }}
-                                                    </a>
-                                                </h3>
-                                                <h4 class="product-price">
-                                                    {{ number_format($product->selling_price) }} MMK
-                                                </h4>
-                                                <div class="product-rating">
-                                                    <i class="fa fa-star"></i>
-                                                    <i class="fa fa-star"></i>
-                                                    <i class="fa fa-star"></i>
-                                                    <i class="fa fa-star"></i>
-                                                    <i class="fa fa-star"></i>
-                                                </div>
-                                                <div class="product-btns">
-                                                    <button class="quick-view"><a
-                                                            href="{{ route('products.show', $product->id) }}"><i
-                                                                class="fa fa-eye"></i><span class="tooltipp">quick
-                                                                view</span></a></button>
-                                                </div>
-                                            </div>
+                            <div class="col-md-3 col-sm-6 col-xs-12">
+                                <div class="product-card">
+                                    <div class="product-img-container">
+                                        @if ($isSoldOut)
+                                            <div class="sold-out-overlay">Sold Out</div>
+                                        @endif
+
+                                        @if ($brand && $brand->logo)
+                                            <img src="{{ $brand->logoUrl() }}" alt="" class="brand-logo-small">
+                                        @endif
+
+                                        @if ($firstImage)
+                                            <img src="{{ asset('storage/products/' . $firstImage) }}" alt="{{ $phoneModel?->model_name }}">
+                                        @else
+                                            <div class="text-muted">No Image</div>
+                                        @endif
+                                    </div>
+
+                                    <div class="product-info">
+                                        <p class="product-category-text">{{ $phoneModel?->category?->category_name ?? 'Gadget' }}</p>
+                                        <h3 class="product-name-text">
+                                            <a href="{{ route('products.show', $product->id) }}">
+                                                {{ $phoneModel?->model_name }}
+                                            </a>
+                                        </h3>
+
+                                        <div class="color-swatches">
+                                            @foreach($availableColors as $color)
+                                                <span class="color-swatch-dot" style="background-color: {{ $color['value'] }}" title="{{ $color['name'] }}"></span>
+                                            @endforeach
                                         </div>
-                                        <!-- /product -->
-                                    @endforeach
+
+                                        <div class="product-price-text">
+                                            {{ number_format($product->selling_price) }} Ks
+                                        </div>
+
+                                        <div class="product-btns">
+                                            <a href="{{ route('products.show', $product->id) }}" class="btn btn-block" style="background: #1e1f29; color: #fff; border-radius: 6px;">
+                                                View Details
+                                            </a>
+                                        </div>
+                                    </div>
                                 </div>
-                                <div id="slick-nav-1" class="products-slick-nav"></div>
                             </div>
-                            <!-- /tab -->
-                        </div>
+                        @endforeach
                     </div>
                 </div>
-                <!-- Products tab & slick -->
             </div>
-            <!-- /row -->
         </div>
-        <!-- /container -->
     </div>
-    <!-- /SECTION -->
 
     <!-- HOT DEAL SECTION -->
     <div id="hot-deal" class="section">
@@ -190,189 +259,88 @@
 
     <!-- POPULAR PRODUCTS SECTION -->
     <div class="section">
-        <!-- container -->
         <div class="container">
-            <!-- row -->
             <div class="row">
-
-                <!-- section title -->
                 <div class="col-md-12">
                     <div class="section-title">
                         <h3 class="title">Popular Products</h3>
-                        <div class="section-nav">
-                            <div id="slick-nav-2" class="products-slick-nav"></div>
-                        </div>
                     </div>
                 </div>
-                <!-- /section title -->
 
-                <!-- Products tab & slick -->
                 <div class="col-md-12">
                     <div class="row">
-                        <div class="products-tabs">
-                            <!-- tab -->
-                            <div id="tab2" class="tab-pane fade in active">
-                                <div class="products-slick" data-nav="#slick-nav-2">
-                                    @foreach ($popular_products as $product)
-                                        <!-- product -->
-                                        <div class="product">
-                                            <div class="product-img">
-                                                @php
-                                                    $phoneModel = $product->phoneModel;
-                                                    $brand = $phoneModel?->brand;
-                                                    $images = is_array($product->image) ? $product->image : (array) json_decode($product->image, true);
-                                                    $firstImage = $images[0] ?? null;
-                                                @endphp
-                                                @if ($brand && $brand->logo)
-                                                    <img src="{{ $brand->logoUrl() }}"
-                                                        alt="{{ $brand->brand_name ?? '' }}" class="brand">
-                                                @endif
-                                                @if ($firstImage)
-                                                    <img src="{{ asset('storage/products/' . $firstImage) }}" alt="">
-                                                @endif
-                                                @if ($product->warranty_month)
-                                                    <div class="product-label">
-                                                        <span class="sale">{{ $product->warranty_month }}M Warranty</span>
-                                                    </div>
-                                                @endif
-                                            </div>
-                                            <div class="product-body">
-                                                <p class="product-category">{{ $phoneModel?->category?->category_name }}</p>
-                                                <h3 class="product-name">
-                                                    <a href="{{ route('products.show', $product->id) }}">
-                                                        {{ $phoneModel?->model_name }}
-                                                    </a>
-                                                </h3>
-                                                <h4 class="product-price">
-                                                    {{ number_format($product->selling_price) }} MMK
-                                                </h4>
-                                                <div class="product-rating">
-                                                    <i class="fa fa-star"></i>
-                                                    <i class="fa fa-star"></i>
-                                                    <i class="fa fa-star"></i>
-                                                    <i class="fa fa-star"></i>
-                                                    <i class="fa fa-star"></i>
-                                                </div>
-                                                <div class="product-btns">
-                                                    <button class="quick-view"><a
-                                                            href="{{ route('products.show', $product->id) }}"><i
-                                                                class="fa fa-eye"></i><span class="tooltipp">quick
-                                                                view</span></a></button>
-                                                </div>
-                                            </div>
+                        @foreach ($popular_products as $product)
+                            @php
+                                $phoneModel = $product->phoneModel;
+                                $brand = $phoneModel?->brand;
+                                $images = is_array($product->image) ? $product->image : (array) json_decode($product->image, true);
+                                $firstImage = $images[0] ?? null;
+                                $availableColors = $phoneModel->available_color ?? [];
+                                $isSoldOut = ($product->product_type === 'new' && $product->stock_quantity <= 0) ||
+                                             ($product->product_type !== 'new' && $product->devices()->where('status', 'available')->count() <= 0);
+                            @endphp
+
+                            <div class="col-md-3 col-sm-6 col-xs-12">
+                                <div class="product-card">
+                                    <div class="product-img-container">
+                                        @if ($isSoldOut)
+                                            <div class="sold-out-overlay">Sold Out</div>
+                                        @endif
+
+                                        @if ($brand && $brand->logo)
+                                            <img src="{{ $brand->logoUrl() }}" alt="" class="brand-logo-small">
+                                        @endif
+
+                                        @if ($firstImage)
+                                            <img src="{{ asset('storage/products/' . $firstImage) }}" alt="{{ $phoneModel?->model_name }}">
+                                        @else
+                                            <div class="text-muted">No Image</div>
+                                        @endif
+                                    </div>
+
+                                    <div class="product-info">
+                                        <p class="product-category-text">{{ $phoneModel?->category?->category_name ?? 'Gadget' }}</p>
+                                        <h3 class="product-name-text">
+                                            <a href="{{ route('products.show', $product->id) }}">
+                                                {{ $phoneModel?->model_name }}
+                                            </a>
+                                        </h3>
+
+                                        <div class="color-swatches">
+                                            @foreach($availableColors as $color)
+                                                <span class="color-swatch-dot" style="background-color: {{ $color['value'] }}" title="{{ $color['name'] }}"></span>
+                                            @endforeach
                                         </div>
-                                        <!-- /product -->
-                                    @endforeach
+
+                                        <div class="product-price-text">
+                                            {{ number_format($product->selling_price) }} Ks
+                                        </div>
+
+                                        <div class="product-btns">
+                                            <a href="{{ route('products.show', $product->id) }}" class="btn btn-block" style="background: #1e1f29; color: #fff; border-radius: 6px;">
+                                                View Details
+                                            </a>
+                                        </div>
+                                    </div>
                                 </div>
-                                <div id="slick-nav-2" class="products-slick-nav"></div>
                             </div>
-                            <!-- /tab -->
-                        </div>
+                        @endforeach
                     </div>
                 </div>
-                <!-- /Products tab & slick -->
             </div>
-            <!-- /row -->
         </div>
-        <!-- /container -->
     </div>
-    <!-- /POPULAR PRODUCTS SECTION -->
 
     <!-- BEST SELLERS SECTION -->
     <div class="section">
-        <!-- container -->
         <div class="container">
-            <!-- row -->
             <div class="row">
-
-                <!-- section title -->
                 <div class="col-md-12">
                     <div class="section-title">
                         <h3 class="title">Best Sellers</h3>
-                        <div class="section-nav">
-                            <div id="slick-nav-3" class="products-slick-nav"></div>
-                        </div>
                     </div>
                 </div>
-                <!-- /section title -->
-
-                <!-- Products tab & slick -->
-                <div class="col-md-12">
-                    <div class="row">
-                        <div class="products-tabs">
-                            <!-- tab -->
-                            <div id="tab3" class="tab-pane fade in active">
-                                <div class="products-slick" data-nav="#slick-nav-3">
-                                    @foreach ($best_sellers as $product)
-                                        <!-- product -->
-                                        <div class="product">
-                                            <div class="product-img">
-                                                @php
-                                                    $phoneModel = $product->phoneModel;
-                                                    $brand = $phoneModel?->brand;
-                                                    $images = is_array($product->image) ? $product->image : (array) json_decode($product->image, true);
-                                                    $firstImage = $images[0] ?? null;
-                                                @endphp
-                                                @if ($brand && $brand->logo)
-                                                    <img src="{{ $brand->logoUrl() }}"
-                                                        alt="{{ $brand->brand_name ?? '' }}" class="brand">
-                                                @endif
-                                                @if ($firstImage)
-                                                    <img src="{{ asset('storage/products/' . $firstImage) }}" alt="">
-                                                @endif
-                                                @if ($product->warranty_month)
-                                                    <div class="product-label">
-                                                        <span class="sale">{{ $product->warranty_month }}M Warranty</span>
-                                                    </div>
-                                                @endif
-                                            </div>
-                                            <div class="product-body">
-                                                <p class="product-category">{{ $phoneModel?->category?->category_name }}</p>
-                                                <h3 class="product-name">
-                                                    <a href="{{ route('products.show', $product->id) }}">
-                                                        {{ $phoneModel?->model_name }}
-                                                    </a>
-                                                </h3>
-                                                <h4 class="product-price">
-                                                    {{ number_format($product->selling_price) }} MMK
-                                                </h4>
-                                                <div class="product-rating">
-                                                    <i class="fa fa-star"></i>
-                                                    <i class="fa fa-star"></i>
-                                                    <i class="fa fa-star"></i>
-                                                    <i class="fa fa-star"></i>
-                                                    <i class="fa fa-star"></i>
-                                                </div>
-                                                <div class="product-btns">
-                                                    <button class="quick-view"><a
-                                                            href="{{ route('products.show', $product->id) }}"><i
-                                                                class="fa fa-eye"></i><span class="tooltipp">quick
-                                                                view</span></a></button>
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <!-- /product -->
-                                    @endforeach
-                                </div>
-                                <div id="slick-nav-3" class="products-slick-nav"></div>
-                            </div>
-                            <!-- /tab -->
-                        </div>
-                    </div>
-                </div>
-                <!-- /Products tab & slick -->
             </div>
-            <!-- /row -->
-        </div>
-        <!-- /container -->
-    </div>
-    <!-- /BEST SELLERS SECTION -->
-
-    <!-- SECTION -->
-    <div class="section">
-        <!-- container -->
-        <div class="container">
-            <!-- row -->
             <div class="row">
                 <div class="col-md-4 col-xs-6">
                     <div class="section-title">

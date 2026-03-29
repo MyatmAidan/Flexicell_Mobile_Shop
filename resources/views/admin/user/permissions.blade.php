@@ -2,6 +2,39 @@
 
 @section('title', 'Manage Permissions — ' . $user->name)
 
+@section('style')
+<style>
+    .permission-grid thead th {
+        background-color: #f8f9fa;
+        text-transform: uppercase;
+        font-size: 0.75rem;
+        letter-spacing: 0.05em;
+        text-align: center;
+        border-bottom: 2px solid #dee2e6;
+    }
+    .permission-grid tbody td {
+        vertical-align: middle;
+    }
+    .module-name {
+        font-weight: 600;
+        color: #495057;
+    }
+    .override-group {
+        display: flex;
+        justify-content: center;
+    }
+    .btn-check:checked + .btn-outline-secondary { background-color: #6c757d; color: #fff; }
+    .btn-check:checked + .btn-outline-success { background-color: #198754; color: #fff; }
+    .btn-check:checked + .btn-outline-danger { background-color: #dc3545; color: #fff; }
+    
+    .other-perm-row {
+        border-bottom: 1px solid #eee;
+        padding: 8px 0;
+    }
+    .other-perm-row:last-child { border-bottom: 0; }
+</style>
+@endsection
+
 @section('content')
 <div class="row">
     <div class="col-md-12">
@@ -20,90 +53,88 @@
                             &nbsp;{{ $user->email }}
                         </small>
                     </div>
-                    <a href="{{ route('admin.user.index') }}" class="btn btn-outline-secondary btn-sm">
-                        <i class="fas fa-arrow-left"></i> Back to Users
-                    </a>
+                    <div class="d-flex gap-2">
+                        <a href="{{ route('admin.user.index') }}" class="btn btn-outline-secondary btn-sm">
+                            <i class="fas fa-arrow-left"></i> Back to Users
+                        </a>
+                        <button type="submit" form="permissionForm" class="btn btn-primary btn-sm px-3" id="saveBtn">
+                            <i class="fas fa-save"></i> Save Permissions
+                        </button>
+                    </div>
                 </div>
 
-                {{-- Legend --}}
-                <div class="alert alert-info d-flex gap-3 align-items-center py-2 mb-4">
-                    <i class="fas fa-info-circle"></i>
-                    <div class="small">
-                        <strong>Inherit</strong> = use the role default &nbsp;|&nbsp;
-                        <strong class="text-success">Grant</strong> = force allow (even if role can't) &nbsp;|&nbsp;
-                        <strong class="text-danger">Revoke</strong> = force deny (even if role can)
+                <div class="row mb-3">
+                    <div class="col-md-8">
+                        {{-- Legend --}}
+                        <div class="alert alert-light border d-flex gap-3 align-items-center py-2 mb-0">
+                            <i class="fas fa-info-circle text-info"></i>
+                            <div class="small">
+                                <strong>Inherit</strong> = role default &nbsp;|&nbsp;
+                                <strong class="text-success">Grant</strong> = force allow &nbsp;|&nbsp;
+                                <strong class="text-danger">Revoke</strong> = force deny
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="input-group input-group-sm">
+                            <span class="input-group-text"><i class="fas fa-search text-muted"></i></span>
+                            <input type="text" id="permSearch" class="form-control" placeholder="Search modules...">
+                        </div>
                     </div>
                 </div>
 
                 {{-- Permission Table --}}
                 <form id="permissionForm">
                     @csrf
-                    <table class="table table-hover table-sm align-middle">
-                        <thead class="table-dark">
-                            <tr>
-                                <th>Permission</th>
-                                <th class="text-center">Role Default</th>
-                                <th class="text-center" style="min-width:260px">Override</th>
-                                <th class="text-center">Effective</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @foreach($permissions as $perm)
-                            <tr>
-                                <td>
-                                    <div class="fw-semibold small">{{ $perm['label'] }}</div>
-                                    <div class="text-muted" style="font-size:11px">{{ $perm['name'] }}</div>
-                                </td>
-                                <td class="text-center">
-                                    @if($perm['role_has'])
-                                        <span class="badge bg-success"><i class="fas fa-check"></i> Yes</span>
-                                    @else
-                                        <span class="badge bg-light text-dark border"><i class="fas fa-times"></i> No</span>
-                                    @endif
-                                </td>
-                                <td class="text-center">
-                                    <div class="btn-group btn-group-sm" role="group">
-                                        <input type="radio"
-                                            class="btn-check"
-                                            name="permissions[{{ $perm['id'] }}]"
-                                            id="inherit_{{ $perm['id'] }}"
-                                            value="inherit"
-                                            {{ $perm['override'] === null ? 'checked' : '' }}>
-                                        <label class="btn btn-outline-secondary" for="inherit_{{ $perm['id'] }}">Inherit</label>
+                    <div class="table-responsive">
+                        <table class="table table-bordered align-middle permission-grid">
+                            <thead>
+                                <tr>
+                                    <th class="text-start" style="width: 220px;">Module / Section</th>
+                                    <th style="width: 240px;">View</th>
+                                    <th style="width: 240px;">Create</th>
+                                    <th style="width: 240px;">Edit</th>
+                                    <th style="width: 240px;">Delete</th>
+                                    <th>Other Actions Override</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach($groupedPermissions as $module => $data)
+                                <tr>
+                                    <td class="module-name px-3">
+                                        {{ $data['displayName'] }}
+                                    </td>
+                                    
+                                    @foreach(['view', 'create', 'edit', 'delete'] as $action)
+                                    <td class="text-center p-1">
+                                        @if($data[$action])
+                                            @include('admin.user.partials.override-buttons', ['perm' => $data[$action]])
+                                        @else
+                                            <span class="text-muted opacity-25 small">—</span>
+                                        @endif
+                                    </td>
+                                    @endforeach
 
-                                        <input type="radio"
-                                            class="btn-check"
-                                            name="permissions[{{ $perm['id'] }}]"
-                                            id="grant_{{ $perm['id'] }}"
-                                            value="grant"
-                                            {{ $perm['override'] === 'grant' ? 'checked' : '' }}>
-                                        <label class="btn btn-outline-success" for="grant_{{ $perm['id'] }}">Grant</label>
-
-                                        <input type="radio"
-                                            class="btn-check"
-                                            name="permissions[{{ $perm['id'] }}]"
-                                            id="revoke_{{ $perm['id'] }}"
-                                            value="revoke"
-                                            {{ $perm['override'] === 'revoke' ? 'checked' : '' }}>
-                                        <label class="btn btn-outline-danger" for="revoke_{{ $perm['id'] }}">Revoke</label>
-                                    </div>
-                                </td>
-                                <td class="text-center effective-cell" data-id="{{ $perm['id'] }}" data-role="{{ $perm['role_has'] ? '1' : '0' }}">
-                                    @if($perm['effective'])
-                                        <span class="badge bg-success"><i class="fas fa-check-circle"></i> Allowed</span>
-                                    @else
-                                        <span class="badge bg-danger"><i class="fas fa-ban"></i> Denied</span>
-                                    @endif
-                                </td>
-                            </tr>
-                            @endforeach
-                        </tbody>
-                    </table>
-
-                    <div class="d-flex justify-content-end mt-3">
-                        <button type="submit" class="btn btn-primary px-4" id="saveBtn">
-                            <i class="fas fa-save"></i> Save Permissions
-                        </button>
+                                    <td class="p-0">
+                                        @if(!empty($data['other']))
+                                            @foreach($data['other'] as $other)
+                                                <div class="other-perm-row px-3 d-flex align-items-center justify-content-between">
+                                                    <span class="small text-muted text-capitalize me-2">
+                                                        {{ str_replace($module.'.', '', $other['label']) }}
+                                                    </span>
+                                                    @include('admin.user.partials.override-buttons', ['perm' => $other])
+                                                </div>
+                                            @endforeach
+                                        @else
+                                            <div class="text-center py-2">
+                                                <span class="text-muted opacity-25 small">—</span>
+                                            </div>
+                                        @endif
+                                    </td>
+                                </tr>
+                                @endforeach
+                            </tbody>
+                        </table>
                     </div>
                 </form>
 
@@ -116,33 +147,43 @@
 @section('script')
 <script>
 $(document).ready(function () {
+    // Search functionality
+    $('#permSearch').on('keyup', function() {
+        let value = $(this).val().toLowerCase();
+        $(".permission-grid tbody tr").filter(function() {
+            $(this).toggle($(this).find('.module-name').text().toLowerCase().indexOf(value) > -1)
+        });
+    });
 
-    // Live-update the "Effective" column as radio buttons change
+    // Live-update "Effective" indicator color/icon based on selection
     $('input[type=radio]').on('change', function () {
-        const permId  = $(this).attr('name').match(/\d+/)[0];
-        const val     = $(this).val();
-        const cell    = $(`.effective-cell[data-id="${permId}"]`);
-        const roleHas = cell.data('role') === 1 || cell.data('role') === '1';
+        const parent = $(this).closest('.override-group');
+        const roleHas = parent.data('role') === 1;
+        const val = $(this).val();
+        
+        let effectiveStatus;
+        if (val === 'grant') effectiveStatus = true;
+        else if (val === 'revoke') effectiveStatus = false;
+        else effectiveStatus = roleHas;
 
-        let effective;
-        if (val === 'grant')   effective = true;
-        else if (val === 'revoke') effective = false;
-        else effective = roleHas;
-
-        cell.html(effective
-            ? '<span class="badge bg-success"><i class="fas fa-check-circle"></i> Allowed</span>'
-            : '<span class="badge bg-danger"><i class="fas fa-ban"></i> Denied</span>'
-        );
+        const indicator = parent.find('.effective-indicator');
+        if (effectiveStatus) {
+            indicator.html('<i class="fas fa-check-circle text-success" title="Allowed"></i>');
+        } else {
+            indicator.html('<i class="fas fa-ban text-danger" title="Denied"></i>');
+        }
     });
 
     // Submit via AJAX
     $('#permissionForm').submit(function (e) {
         e.preventDefault();
 
-        const url  = "{{ route('admin.user.permissions.update', $user->id) }}";
+        const url = "{{ route('admin.user.permissions.update', $user->id) }}";
         const data = $(this).serialize();
+        const saveBtn = $('#saveBtn');
+        const originalText = saveBtn.html();
 
-        $('#saveBtn').prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Saving...');
+        saveBtn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Saving...');
 
         $.ajax({
             url: url,
@@ -155,15 +196,14 @@ $(document).ready(function () {
                     icon: 'success',
                     title: res.message,
                     timer: 2000,
-                    showConfirmButton: false,
-                    timerProgressBar: true,
+                    showConfirmButton: false
                 });
             },
             error: function (xhr) {
                 Swal.fire({ icon: 'error', title: 'Error', text: xhr.responseJSON?.message || 'Failed to save.' });
             },
             complete: function () {
-                $('#saveBtn').prop('disabled', false).html('<i class="fas fa-save"></i> Save Permissions');
+                saveBtn.prop('disabled', false).html(originalText);
             }
         });
     });

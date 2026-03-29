@@ -15,6 +15,7 @@ class DeviceController extends Controller
 {
     public function index()
     {
+        $this->requirePermission('devices.view');
         $ramOptions = DB::table('ram_options')->orderBy('name')->get(['id', 'name', 'value']);
         $storageOptions = DB::table('storage_options')->orderBy('name')->get(['id', 'name', 'value']);
         $colorOptions = DB::table('color_options')->orderBy('name')->get(['id', 'name', 'value']);
@@ -23,6 +24,7 @@ class DeviceController extends Controller
 
     public function getList()
     {
+        $this->requirePermission('devices.view');
         $devices = Device::with('product.phoneModel.brand');
 
         return DataTables::of($devices)
@@ -72,6 +74,7 @@ class DeviceController extends Controller
 
     public function getData($id)
     {
+        $this->requirePermission('devices.view');
         $device = Device::with('product.phoneModel.brand')->findOrFail($id);
         $products = Product::with('phoneModel.brand')->get()->map(function ($p) {
             return [
@@ -101,6 +104,7 @@ class DeviceController extends Controller
 
     public function create()
     {
+        $this->requirePermission('devices.create');
         $products = Product::with('phoneModel.brand')->get();
         $ramOptions = DB::table('ram_options')->orderBy('value')->get();
         $storageOptions = DB::table('storage_options')->orderBy('value')->get();
@@ -110,6 +114,7 @@ class DeviceController extends Controller
 
     public function store(DeviceCreateRequest $request)
     {
+        $this->requirePermission('devices.create');
         try {
             $imageFiles = [];
 
@@ -163,6 +168,7 @@ class DeviceController extends Controller
 
     public function edit($id)
     {
+        $this->requirePermission('devices.update');
         $device = Device::with('product.phoneModel')->findOrFail($id);
         $products = Product::with('phoneModel.brand')->get();
         $ramOptions = DB::table('ram_options')->orderBy('value')->get();
@@ -173,6 +179,7 @@ class DeviceController extends Controller
 
     public function update(DeviceUpdateRequest $request, $id)
     {
+        $this->requirePermission('devices.update');
         try {
             $device = Device::findOrFail($id);
 
@@ -237,6 +244,7 @@ class DeviceController extends Controller
 
     public function destroy($id)
     {
+        $this->requirePermission('devices.delete');
         $device = Device::findOrFail($id);
 
         if ($device->image && is_array($device->image)) {

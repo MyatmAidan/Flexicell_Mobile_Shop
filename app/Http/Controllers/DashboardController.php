@@ -55,9 +55,11 @@ class DashboardController extends Controller
             $orderGrowth = 100;
         }
 
-        // Customers
-        $totalCustomers = User::where('role', 'user')->count();
-        $newCustomersThisMonth = User::where('role', 'user')->where('created_at', '>=', $startOfMonth)->count();
+        // Customers (users with customer role)
+        $totalCustomers = User::whereHas('assignedRole', fn ($q) => $q->where('code', 'user'))->count();
+        $newCustomersThisMonth = User::whereHas('assignedRole', fn ($q) => $q->where('code', 'user'))
+            ->where('created_at', '>=', $startOfMonth)
+            ->count();
 
         // Products
         $totalProducts = Product::count();

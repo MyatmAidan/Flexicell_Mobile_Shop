@@ -11,12 +11,14 @@ class InstallmentRateController extends Controller
 {
     public function index()
     {
+        $this->requirePermission('installment_rate.manage');
         $installments = InstallmentRate::all();
         return view('admin.installment_rate.index', compact('installments'));
     }
 
     public function getList()
     {
+        $this->requirePermission('installment_rate.manage');
         $installments = InstallmentRate::all();
         return DataTables::of($installments)
             ->addColumn('plus-icon', function () {
@@ -47,11 +49,13 @@ class InstallmentRateController extends Controller
 
     public function create()
     {
+        $this->requirePermission('installment_rate.manage');
         return view('admin.installment_rate.create');
     }
 
     public function store(InstallmentRateCreateRequest $request)
     {
+        $this->requirePermission('installment_rate.manage');
         InstallmentRate::Create([
             'month_option' => $request->installment_month,
             'rate' => $request->installment_rate,
@@ -63,12 +67,14 @@ class InstallmentRateController extends Controller
 
     public function edit($id)
     {
+        $this->requirePermission('installment_rate.manage');
         $installment = InstallmentRate::findOrFail($id);
         return view('admin.installment_rate.edit', compact('installment'));
     }
 
     public function update(InstallmentRateUpdateRequest $request, $id)
     {
+        $this->requirePermission('installment_rate.manage');
         $installment = InstallmentRate::findOrFail($id);
         $installment->update([
             'month_option' => $request->installment_month,
@@ -82,6 +88,7 @@ class InstallmentRateController extends Controller
 
     public function destroy($id)
     {
+        $this->requirePermission('installment_rate.manage');
         $installment = InstallmentRate::find($id);
 
         if (!$installment) {

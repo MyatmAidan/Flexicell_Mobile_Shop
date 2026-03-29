@@ -22,7 +22,7 @@ class CheckPermission
 
         $user = Auth::user();
 
-        if (!$user->hasPermission($permission)) {
+        if (!$user->hasPermissionTo($permission)) {
             abort(403, 'You do not have permission to perform this action.');
         }
 
