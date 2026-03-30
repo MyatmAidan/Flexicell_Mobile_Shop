@@ -26,16 +26,16 @@ class DirectSaleCheckoutRequest extends FormRequest
             'items.*.storage_option_id' => ['nullable', 'exists:storage_options,id'],
             'items.*.color_option_id' => ['nullable', 'exists:color_options,id'],
 
-            'customer_name' => ['nullable', 'string', 'max:255'],
-            'customer_phone' => ['nullable', 'string', 'max:50'],
-            'customer_nrc' => ['nullable', 'string', 'max:255'],
-            'customer_address' => ['nullable', 'string'],
-            'attachments' => ['nullable', 'array'],
-            'attachments.*' => ['file', 'mimes:jpg,jpeg,png,pdf', 'max:5120'], // Max 5MB per file
+            'customer_id' => ['required', 'integer', 'exists:customers,id'],
 
             'payment_type' => ['required', 'in:cash,installment'],
             'installment_rate_id' => ['nullable', 'integer'],
             'down_payment' => ['nullable', 'numeric', 'min:0'],
+
+            'customer_nrc' => ['nullable', 'string', 'max:255'],
+            'customer_address' => ['nullable', 'string'],
+            'attachments' => ['nullable', 'array'],
+            'attachments.*' => ['file', 'mimes:jpg,jpeg,png,pdf', 'max:5120'],
         ];
     }
 
@@ -61,6 +61,15 @@ class DirectSaleCheckoutRequest extends FormRequest
                 $discount = isset($item['discount_price']) ? (float) $item['discount_price'] : 0.0;
                 if ($discount > $unit) {
                     $validator->errors()->add("items.$i.discount_price", 'Discount cannot exceed unit price.');
+                }
+            }
+
+            if ($this->input('payment_type') === 'installment') {
+                if (empty($this->input('customer_nrc'))) {
+                    $validator->errors()->add('customer_nrc', 'NRC is required for installment payments.');
+                }
+                if (empty($this->input('installment_rate_id'))) {
+                    $validator->errors()->add('installment_rate_id', 'Installment plan is required.');
                 }
             }
         });

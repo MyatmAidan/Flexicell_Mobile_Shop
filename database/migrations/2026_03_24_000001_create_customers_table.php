@@ -12,9 +12,9 @@ return new class extends Migration
             $table->id();
             $table->string('name');
             $table->string('phone')->nullable();
-            $table->string('nrc')->nullable();
+            $table->string('email')->nullable();
             $table->text('address')->nullable();
-            $table->json('attachments')->nullable();
+            $table->integer('points')->default(0);
             $table->timestamps();
         });
     }

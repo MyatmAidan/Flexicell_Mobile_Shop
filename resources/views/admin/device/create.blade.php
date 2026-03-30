@@ -154,6 +154,21 @@
                                 </div>
                             </div>
                         </div>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group mb-3">
+                                    <label for="warranty_id" class="form-label">Warranty</label>
+                                    <select class="form-control" id="warranty_id" name="warranty_id">
+                                        <option value="">No Warranty</option>
+                                        @foreach(($warranties ?? []) as $w)
+                                            <option value="{{ $w->id }}" @selected(old('warranty_id') == $w->id)>
+                                                {{ $w->warranty_month }} Months ({{ ucfirst($w->status) }})
+                                            </option>
+                                        @endforeach
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
                         <div class="form-group mb-3">
                             <label for="image-input" class="form-label">Images</label>
                             <input type="file" class="form-control" id="image-input" accept="image/*" multiple>

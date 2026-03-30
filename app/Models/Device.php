@@ -43,4 +43,9 @@ class Device extends Model
     {
         return $this->belongsTo(\App\Models\ColorOption::class, 'color_option_id');
     }
+
+    public function warrantyDetails()
+    {
+        return $this->hasMany(WarrantyDetail::class);
+    }
 }

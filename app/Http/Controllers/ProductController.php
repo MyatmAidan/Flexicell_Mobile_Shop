@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Device;
 use App\Models\Product;
 use App\Models\Phone_model;
+use App\Models\Warranty;
 use App\Support\VariantStock;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
@@ -65,7 +66,8 @@ class ProductController extends Controller
         $ramOptions = DB::table('ram_options')->orderBy('name')->get(['id', 'name', 'value']);
         $storageOptions = DB::table('storage_options')->orderBy('name')->get(['id', 'name', 'value']);
         $colorOptions = DB::table('color_options')->orderBy('name')->get(['id', 'name', 'value']);
-        return view('admin.product.create', compact('phoneModels', 'ramOptions', 'storageOptions', 'colorOptions'));
+        $warranties = Warranty::orderBy('warranty_month')->get();
+        return view('admin.product.create', compact('phoneModels', 'ramOptions', 'storageOptions', 'colorOptions', 'warranties'));
     }
 
     public function store(ProductCreateRequest $request)
@@ -106,7 +108,6 @@ class ProductController extends Controller
                 $product = Product::create([
                     'phone_model_id' => $request->phone_model_id,
                     'product_type' => $request->product_type,
-                    'warranty_month' => $request->warranty_month,
                     'image' => $imageFiles ?: null,
                     'description' => $request->description,
                     'stock_quantity' => $isSecondHand ? 1 : ($request->stock_quantity ?? 0),
@@ -142,11 +143,11 @@ class ProductController extends Controller
                     'ram_option_id' => $request->ram_option_id,
                     'storage_option_id' => $request->storage_option_id,
                     'color_option_id' => $colorOptionId,
+                    'warranty_id' => $request->warranty_id ?: null,
                     'battery_percentage' => $request->battery_percentage,
                     'condition_grade' => $request->condition_grade,
                     'status' => 'available',
                     'purchase_price' => $request->buy_price,
-                    'selling_price' => $request->selling_price,
                     'image' => $imageFiles ?: null,
                 ]);
 
@@ -164,10 +165,10 @@ class ProductController extends Controller
                             'ram_option_id' => null,
                             'storage_option_id' => null,
                             'color_option_id' => null,
+                            'warranty_id' => $request->warranty_id ?: null,
                             'battery_percentage' => 0,
                             'condition_grade' => 'NEW',
                             'status' => 'available',
-                            'selling_price' => $request->selling_price,
                             'created_at' => now(),
                             'updated_at' => now(),
                         ];
@@ -207,7 +208,8 @@ class ProductController extends Controller
         $ramOptions = DB::table('ram_options')->orderBy('name')->get(['id', 'name', 'value']);
         $storageOptions = DB::table('storage_options')->orderBy('name')->get(['id', 'name', 'value']);
         $colorOptions = DB::table('color_options')->orderBy('name')->get(['id', 'name', 'value']);
-        return view('admin.product.edit', compact('product', 'phoneModels', 'products', 'ramOptions', 'storageOptions', 'colorOptions'));
+        $warranties = Warranty::orderBy('warranty_month')->get();
+        return view('admin.product.edit', compact('product', 'phoneModels', 'products', 'ramOptions', 'storageOptions', 'colorOptions', 'warranties'));
     }
 
     public function update(ProductUpdateRequest $request, $id)
@@ -270,8 +272,6 @@ class ProductController extends Controller
             $product->update([
                 'phone_model_id' => $request->phone_model_id,
                 'product_type' => $request->product_type,
-                'selling_price' => $request->selling_price,
-                'warranty_month' => $request->warranty_month,
                 'image' => $newImages ?: null,
                 'description' => $request->description,
                 'stock_quantity' => $newStockQuantity,

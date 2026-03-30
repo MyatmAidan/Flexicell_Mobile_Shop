@@ -16,8 +16,10 @@ use App\Http\Controllers\OrderController;
 use App\Http\Controllers\InstallmentRateController;
 use App\Http\Controllers\PhoneModelController;
 use App\Http\Controllers\ProductController;
+use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\UserPermissionController;
+use App\Http\Controllers\WarrantyDetailController;
 use App\Models\Category;
 use App\Models\Product;
 use App\Models\Brand;
@@ -147,12 +149,22 @@ Route::middleware(['authCheck', 'adminAuth'])->name('admin.')->group(function ()
 
         Route::get('/', [DashboardController::class, 'index'])->name('dashboard');
 
+        // ---- Profile (any authenticated user) ---------------------------
+        Route::prefix('profile')->group(function () {
+            Route::get('/', [ProfileController::class, 'show'])->name('profile');
+            Route::put('/', [ProfileController::class, 'update'])->name('profile.update');
+            Route::post('/photo', [ProfileController::class, 'updatePhoto'])->name('profile.photo');
+            Route::delete('/photo', [ProfileController::class, 'removePhoto'])->name('profile.photo.remove');
+            Route::put('/password', [ProfileController::class, 'changePassword'])->name('profile.password');
+        });
+
         // ---- User Management (superadmin only) --------------------------
         Route::middleware('permission:users.manage')->prefix('user')->group(function () {
             Route::get('/', [UserController::class, 'index'])->name('user.index');
             Route::get('/list', [UserController::class, 'getList'])->name('user.getList');
             Route::get('/create', [UserController::class, 'create'])->name('user.create');
             Route::post('/', [UserController::class, 'store'])->name('user.store');
+            Route::get('/show/{id}', [UserController::class, 'show'])->name('user.show');
             Route::get('/edit/{id}', [UserController::class, 'edit'])->name('user.edit');
             Route::put('/update/{id}', [UserController::class, 'update'])->name('user.update');
             Route::delete('/{user}', [UserController::class, 'destroy'])->name('user.destroy');
@@ -245,6 +257,7 @@ Route::middleware(['authCheck', 'adminAuth'])->name('admin.')->group(function ()
             Route::get('/', [DirectSaleController::class, 'index'])->name('direct_sale.index');
             Route::get('/products', [DirectSaleController::class, 'searchProducts'])->name('direct_sale.products');
             Route::get('/devices', [DirectSaleController::class, 'searchDevices'])->name('direct_sale.devices');
+            Route::get('/customers', [DirectSaleController::class, 'searchCustomers'])->name('direct_sale.customers');
             Route::get('/variants/{product}', [DirectSaleController::class, 'variants'])->name('direct_sale.variants');
             Route::get('/variants-stock', [DirectSaleController::class, 'checkVariantStock'])->name('direct_sale.variants_stock');
             Route::post('/checkout', [DirectSaleController::class, 'checkout'])->name('direct_sale.checkout');
@@ -265,6 +278,12 @@ Route::middleware(['authCheck', 'adminAuth'])->name('admin.')->group(function ()
             Route::get('/list', [InstallmentController::class, 'getList'])->name('installment.getList');
             Route::post('/payment/{paymentId}/mark-paid', [InstallmentController::class, 'markPaid'])->name('installment.markPaid');
             Route::get('/{id}', [InstallmentController::class, 'show'])->name('installment.show');
+        });
+
+        // ---- Warranty Details -------------------------------------------
+        Route::middleware('permission:warranty_detail.view')->prefix('warranty-detail')->group(function () {
+            Route::get('/', [WarrantyDetailController::class, 'index'])->name('warranty_detail.index');
+            Route::get('/list', [WarrantyDetailController::class, 'getList'])->name('warranty_detail.getList');
         });
 
         // ---- Blogs (superadmin + manager) -------------------------------

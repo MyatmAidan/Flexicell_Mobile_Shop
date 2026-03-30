@@ -23,6 +23,7 @@ class DeviceCreateRequest extends FormRequest
             'new_color_value' => 'nullable|string|max:7',
             'battery_percentage' => 'required|integer|min:0|max:100',
             'condition_grade' => 'required|string|max:20',
+            'warranty_id' => 'nullable|exists:warranties,id',
             'status' => 'nullable|in:available,sold,reserved,defective',
             'purchase_price' => 'nullable|numeric|min:0',
             'selling_price' => 'nullable|numeric|min:0',

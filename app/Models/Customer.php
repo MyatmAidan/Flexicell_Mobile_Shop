@@ -12,17 +12,23 @@ class Customer extends Model
     protected $fillable = [
         'name',
         'phone',
-        'nrc',
+        'email',
         'address',
-        'attachments',
-    ];
-
-    protected $casts = [
-        'attachments' => 'json',
+        'points',
     ];
 
     public function orders()
     {
         return $this->hasMany(Order::class);
+    }
+
+    public function paymentCustomers()
+    {
+        return $this->hasMany(PaymentCustomer::class);
+    }
+
+    public function warrantyDetails()
+    {
+        return $this->hasMany(WarrantyDetail::class);
     }
 }

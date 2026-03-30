@@ -10,30 +10,31 @@
         <div class="navbar-collapse justify-content-end px-0" id="navbarNav">
             <ul class="navbar-nav flex-row ms-auto align-items-center justify-content-end">
                 <li class="nav-item dropdown">
-                    <a class="nav-link nav-icon-hover" href="javascript:void(0)" id="drop2"
+                    <a class="nav-link nav-icon-hover d-flex align-items-center gap-2" href="javascript:void(0)" id="drop2"
                         data-bs-toggle="dropdown" aria-expanded="false">
-                        <img src="{{ asset('assets/images/profile/user-1.jpg') }}" alt="" width="35"
-                            height="35" class="rounded-circle">
+                        @if(Auth::user()->profile_photo)
+                            <img src="{{ asset('storage/' . Auth::user()->profile_photo) }}" alt="" width="35" height="35" class="rounded-circle" style="object-fit: cover;">
+                        @else
+                            <img src="{{ asset('assets/images/profile/user-1.jpg') }}" alt="" width="35" height="35" class="rounded-circle">
+                        @endif
+                        <span class="d-none d-md-inline fw-semibold small">{{ Auth::user()->name }}</span>
                     </a>
-                    <div class="dropdown-menu dropdown-menu-end dropdown-menu-animate-up" aria-labelledby="drop2">
+                    <div class="dropdown-menu dropdown-menu-end dropdown-menu-animate-up" aria-labelledby="drop2" style="min-width: 200px;">
                         <div class="message-body">
-                            {{-- <a href="{{ route('admin.profile') }}" class="d-flex align-items-center gap-2 dropdown-item"> --}}
+                            <div class="px-3 py-2 border-bottom">
+                                <div class="fw-semibold">{{ Auth::user()->name }}</div>
+                                <div class="small text-muted">{{ Auth::user()->email }}</div>
+                            </div>
+                            <a href="{{ route('admin.profile') }}" class="d-flex align-items-center gap-2 dropdown-item py-2">
                                 <i class="ti ti-user fs-6"></i>
-                                <p class="mb-0 fs-3">My Profile</p>
-                            {{-- </a> --}}
-                            {{-- <a href="javascript:void(0)" class="d-flex align-items-center gap-2 dropdown-item">
-                                <i class="ti ti-mail fs-6"></i>
-                                <p class="mb-0 fs-3">My Account</p>
+                                <span>My Profile</span>
                             </a>
-                            <a href="javascript:void(0)" class="d-flex align-items-center gap-2 dropdown-item">
-                                <i class="ti ti-list-check fs-6"></i>
-                                <p class="mb-0 fs-3">My Task</p>
-                            </a> --}}
-                            <div class="d-flex justify-content-center">
+                            <div class="border-top px-3 py-2">
                                 <form action="{{ route('logout') }}" method="POST">
                                     @csrf
-                                    <button type="submit"
-                                        class="btn btn-outline-primary mx-3 mt-2 d-block">Logout</button>
+                                    <button type="submit" class="btn btn-outline-danger btn-sm w-100">
+                                        <i class="ti ti-logout me-1"></i> Logout
+                                    </button>
                                 </form>
                             </div>
                         </div>

@@ -16,8 +16,7 @@ class ProductCreateRequest extends FormRequest
         $rules = [
             'phone_model_id' => 'required|exists:phone_models,id',
             'product_type' => 'required|in:new,second hand',
-            'selling_price' => 'required|numeric|min:0',
-            'warranty_month' => 'nullable|integer|min:0',
+            'warranty_id' => 'nullable|exists:warranties,id',
             'description' => 'nullable|string',
             'stock_quantity' => 'nullable|integer|min:0',
             'image' => 'nullable|array',
@@ -48,9 +47,6 @@ class ProductCreateRequest extends FormRequest
             'phone_model_id.exists' => 'The selected phone model is invalid.',
             'product_type.required' => 'Product type is required.',
             'product_type.in' => 'Product type must be either new or second hand.',
-            'selling_price.required' => 'Selling price is required.',
-            'selling_price.numeric' => 'Selling price must be a number.',
-
             // Second-hand messages
             'imei.required' => 'IMEI is required for second-hand devices.',
             'imei.unique' => 'This IMEI already exists in the system.',

@@ -2,7 +2,6 @@
 
 namespace Database\Seeders;
 
-use App\Models\Organization;
 use App\Models\Role;
 use App\Models\User;
 use Illuminate\Database\Seeder;
@@ -39,14 +38,14 @@ class UserSeeder extends Seeder
         foreach ($users as $data) {
             $roleCode = $data['role'];
             unset($data['role']);
-            
+
             $role = Role::where('code', $roleCode)->first();
-            
+
             $user = User::updateOrCreate(
                 ['email' => $data['email']],
                 array_merge($data, [
-                    'role_id' => $role?->id,
-                    'status' => 1,
+                    'role_id'            => $role?->id,
+                    'status'             => 1,
                     'is_primary_account' => ($roleCode === 'superadmin'),
                 ])
             );

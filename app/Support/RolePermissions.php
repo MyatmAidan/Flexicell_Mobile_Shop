@@ -27,6 +27,7 @@ final class RolePermissions
         'menu.blog',
         'menu.customer',
         'menu.trade-in',
+        'menu.warranty-detail',
 
         // Module Management Permissions (used in routes)
         'users.manage',
@@ -111,6 +112,13 @@ final class RolePermissions
         'direct_sales.create',
         'direct_sales.update',
         'direct_sales.delete',
+
+        // Warranty Details
+        'warranty_detail.view',
+        'warranty_details.view',
+        'warranty_details.create',
+        'warranty_details.update',
+        'warranty_details.delete',
     ];
 
     public static function allNames(): array
@@ -137,6 +145,7 @@ final class RolePermissions
                 'menu.direct-sale',
                 'menu.order',
                 'menu.installment',
+                'menu.warranty-detail',
                 'dashboard.view',
                 'devices.view',
                 'devices.manage',
@@ -145,6 +154,8 @@ final class RolePermissions
                 'direct_sales.create',
                 'installment.manage',
                 'installments.view',
+                'warranty_detail.view',
+                'warranty_details.view',
             ];
         }
 

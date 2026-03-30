@@ -20,6 +20,7 @@ return new class extends Migration
             $table->foreignId('ram_option_id')->nullable()->constrained('ram_options')->nullOnDelete();
             $table->foreignId('storage_option_id')->nullable()->constrained('storage_options')->nullOnDelete();
             $table->foreignId('color_option_id')->nullable()->constrained('color_options')->nullOnDelete();
+            $table->foreignId('warranty_id')->nullable()->constrained('warranties')->nullOnDelete();
             $table->integer('battery_percentage');
             $table->string('condition_grade');
             $table->string('status')->default('available');

@@ -90,7 +90,7 @@ class UserPermissionController extends Controller
             if (in_array($type, ['grant', 'revoke'])) {
                 $rows[] = [
                     'user_id'       => $user->id,
-                    'permission_id' => (int) $permId,
+                    'permission_id' => $permId,
                     'type'          => $type,
                     'created_at'    => now(),
                     'updated_at'    => now(),

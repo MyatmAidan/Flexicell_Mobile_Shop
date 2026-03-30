@@ -64,22 +64,6 @@
                         <div class="row">
                             <div class="col-md-6">
                                 <div class="form-group mb-3">
-                                    <label for="selling_price" class="form-label">Selling Price <span class="text-danger fs-5">*</span></label>
-                                    <input type="number" step="0.01" class="form-control" id="selling_price" name="selling_price"
-                                        placeholder="0.00" value="{{ old('selling_price', $product->selling_price) }}" required>
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="form-group mb-3">
-                                    <label for="warranty_month" class="form-label">Warranty (months)</label>
-                                    <input type="number" class="form-control" id="warranty_month" name="warranty_month"
-                                        placeholder="Optional" value="{{ old('warranty_month', $product->warranty_month) }}" min="0">
-                                </div>
-                            </div>
-                        </div>
-                        <div class="row">
-                            <div class="col-md-6">
-                                <div class="form-group mb-3">
                                     <label for="stock_quantity" class="form-label">Stock Quantity</label>
                                     <input type="number" class="form-control" id="stock_quantity" name="stock_quantity"
                                         placeholder="0" value="{{ old('stock_quantity', $product->stock_quantity) }}" min="0">
@@ -135,6 +119,7 @@
                                             data-ram_option_id="{{ $device->ram_option_id }}"
                                             data-storage_option_id="{{ $device->storage_option_id }}"
                                             data-color_option_id="{{ $device->color_option_id }}"
+                                            data-warranty_id="{{ $device->warranty_id }}"
                                             data-battery="{{ $device->battery_percentage }}"
                                             data-condition="{{ $device->condition_grade }}"
                                             data-status="{{ $device->status }}"
@@ -295,6 +280,7 @@
             $('#modal_status').val(row.data('status'));
             $('#modal_purchase_price').val(row.data('purchase_price') || '');
             $('#modal_selling_price').val(row.data('selling_price') || '');
+            $('#modal_warranty_id').val(row.data('warranty_id') || '');
             $('#modal_image_preview_wrapper').empty();
             let imagesData = row.data('image');
             if (imagesData) {
@@ -382,7 +368,8 @@
                     row.data('color_option_id', $('#modal_color_option_id').val());
                     row.data('purchase_price', $('#modal_purchase_price').val());
                     row.data('selling_price', $('#modal_selling_price').val());
-                    
+                    row.data('warranty_id', $('#modal_warranty_id').val());
+
                     let imageArray = [];
                     $('#modal_image_preview_wrapper input[name="image[]"]').each(function() {
                         let val = $(this).val();

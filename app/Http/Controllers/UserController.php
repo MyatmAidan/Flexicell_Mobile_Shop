@@ -61,15 +61,26 @@ class UserController extends Controller
             ->addColumn('plus-icon', function ($user) {
                 return '';
             })
+            ->editColumn('name', function ($user) {
+                $url = route('admin.user.show', $user->id);
+                return '<a href="' . $url . '" class="fw-semibold text-decoration-none">' . htmlspecialchars($user->name, ENT_QUOTES) . '</a>';
+            })
             ->addColumn('role', function ($user) {
                 return $user->assignedRole?->name ?? 'N/A';
             })
             ->addColumn('action', function ($user) {
                 $id = $user->id;
+                $showUrl = route('admin.user.show', $id);
+
+                $viewBtn = '<a href="' . $showUrl . '" 
+                    class="btn btn-sm px-3 py-2 btn-outline-info" 
+                    title="View Profile">
+                    <i class="fas fa-eye"></i>
+                </a>';
 
                 $editBtn = '<a href="#" 
-                    class="btn btn-sm mx-2 px-3 py-2 btn-primary edit-user-btn" 
-                    title="edit"
+                    class="btn btn-sm px-3 py-2 btn-primary edit-user-btn" 
+                    title="Edit"
                     data-id="' . $id . '"
                     data-name="' . htmlspecialchars($user->name, ENT_QUOTES) . '"
                     data-email="' . htmlspecialchars($user->email, ENT_QUOTES) . '"
@@ -83,14 +94,22 @@ class UserController extends Controller
                 $deleteBtn = '<a href="#" 
                     class="btn btn-danger btn-sm px-3 py-2 delete-btn" 
                     data-id="' . $id . '" 
-                    title="delete">
+                    title="Delete">
                     <i class="fa fa-trash-alt"></i>
                 </a>';
 
-                return '<div class="action-btn" role="group">' . $editBtn . ' ' . $deleteBtn . '</div>';
+                return '<div class="d-flex gap-1" role="group">' . $viewBtn . $editBtn . $deleteBtn . '</div>';
             })
-            ->rawColumns(['action'])
+            ->rawColumns(['name', 'action'])
             ->make(true);
+    }
+
+    public function show(string $id)
+    {
+        $this->requirePermission('users.view');
+        $user = User::with('assignedRole')->findOrFail($id);
+
+        return view('admin.user.show', compact('user'));
     }
 
     public function edit(string $id)

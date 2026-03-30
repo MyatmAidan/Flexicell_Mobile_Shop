@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Support\VariantStock;
 use App\Models\Device;
 use App\Models\Product;
+use App\Models\Warranty;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use App\Http\Requests\DeviceCreateRequest;
@@ -19,7 +20,8 @@ class DeviceController extends Controller
         $ramOptions = DB::table('ram_options')->orderBy('name')->get(['id', 'name', 'value']);
         $storageOptions = DB::table('storage_options')->orderBy('name')->get(['id', 'name', 'value']);
         $colorOptions = DB::table('color_options')->orderBy('name')->get(['id', 'name', 'value']);
-        return view('admin.device.index', compact('ramOptions', 'storageOptions', 'colorOptions'));
+        $warranties = Warranty::orderBy('warranty_month')->get();
+        return view('admin.device.index', compact('ramOptions', 'storageOptions', 'colorOptions', 'warranties'));
     }
 
     public function getList()
@@ -91,6 +93,7 @@ class DeviceController extends Controller
                 'ram_option_id' => $device->ram_option_id,
                 'storage_option_id' => $device->storage_option_id,
                 'color_option_id' => $device->color_option_id,
+                'warranty_id' => $device->warranty_id,
                 'battery_percentage' => $device->battery_percentage,
                 'condition_grade' => $device->condition_grade,
                 'status' => $device->status,
@@ -109,7 +112,8 @@ class DeviceController extends Controller
         $ramOptions = DB::table('ram_options')->orderBy('value')->get();
         $storageOptions = DB::table('storage_options')->orderBy('value')->get();
         $colorOptions = DB::table('color_options')->orderBy('value')->get();
-        return view('admin.device.create', compact('products', 'ramOptions', 'storageOptions', 'colorOptions'));
+        $warranties = Warranty::orderBy('warranty_month')->get();
+        return view('admin.device.create', compact('products', 'ramOptions', 'storageOptions', 'colorOptions', 'warranties'));
     }
 
     public function store(DeviceCreateRequest $request)
@@ -146,6 +150,7 @@ class DeviceController extends Controller
                 'ram_option_id' => $request->ram_option_id,
                 'storage_option_id' => $request->storage_option_id,
                 'color_option_id' => $colorOptionId,
+                'warranty_id' => $request->warranty_id ?: null,
                 'battery_percentage' => $request->battery_percentage,
                 'condition_grade' => $request->condition_grade,
                 'status' => $request->status ?? 'available',
@@ -174,7 +179,8 @@ class DeviceController extends Controller
         $ramOptions = DB::table('ram_options')->orderBy('value')->get();
         $storageOptions = DB::table('storage_options')->orderBy('value')->get();
         $colorOptions = DB::table('color_options')->orderBy('value')->get();
-        return view('admin.device.edit', compact('device', 'products', 'ramOptions', 'storageOptions', 'colorOptions'));
+        $warranties = Warranty::orderBy('warranty_month')->get();
+        return view('admin.device.edit', compact('device', 'products', 'ramOptions', 'storageOptions', 'colorOptions', 'warranties'));
     }
 
     public function update(DeviceUpdateRequest $request, $id)
@@ -222,6 +228,7 @@ class DeviceController extends Controller
                 'ram_option_id' => $request->ram_option_id,
                 'storage_option_id' => $request->storage_option_id,
                 'color_option_id' => $colorOptionId,
+                'warranty_id' => $request->warranty_id ?: null,
                 'battery_percentage' => $request->battery_percentage,
                 'condition_grade' => $request->condition_grade,
                 'status' => $request->status ?? 'available',

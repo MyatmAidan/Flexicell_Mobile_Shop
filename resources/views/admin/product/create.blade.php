@@ -94,14 +94,13 @@
                     <div class="row">
                         <div class="col-md-6">
                             <div class="form-group mb-3">
-                                <label>Selling Price <span class="text-danger">*</span></label>
-                                <input type="number" step="0.01" name="selling_price" class="form-control" placeholder="0.00" required>
-                            </div>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="form-group mb-3">
-                                <label>Warranty (months)</label>
-                                <input type="number" name="warranty_month" class="form-control" placeholder="Optional">
+                                <label>Warranty</label>
+                                <select class="form-control" name="warranty_id">
+                                    <option value="">No Warranty</option>
+                                    @foreach(($warranties ?? []) as $w)
+                                        <option value="{{ $w->id }}">{{ $w->warranty_month }} Months ({{ ucfirst($w->status) }})</option>
+                                    @endforeach
+                                </select>
                             </div>
                         </div>
                     </div>

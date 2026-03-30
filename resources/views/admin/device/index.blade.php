@@ -121,6 +121,7 @@
                     $('#modal_status').val(data.device.status);
                     $('#modal_purchase_price').val(data.device.purchase_price);
                     $('#modal_selling_price').val(data.device.selling_price);
+                    $('#modal_warranty_id').val(data.device.warranty_id || '');
 
                     $('#modal_image_preview_wrapper').empty();
                     let images = data.device.image || [];

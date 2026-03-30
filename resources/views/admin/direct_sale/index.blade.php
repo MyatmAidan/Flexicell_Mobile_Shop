@@ -11,9 +11,51 @@
 <style>
     .pos-panel { min-height: 70vh; }
     .pos-scroll { max-height: 60vh; overflow: auto; }
-    .pos-product-item { cursor: pointer; transition: transform 0.2s; border: 1px solid #eee; }
-    .pos-product-item:hover { transform: translateY(-3px); box-shadow: 0 4px 12px rgba(0,0,0,0.08) !important; }
     .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; }
+
+    /* Product card base */
+    .pos-product-item { cursor: grab; transition: transform 0.15s, box-shadow 0.15s; border: 1px solid #e8eaed; border-radius: 8px; overflow: hidden; }
+    .pos-product-item:hover { transform: translateY(-2px); box-shadow: 0 4px 14px rgba(0,0,0,0.1) !important; }
+    .pos-product-item.dragging { opacity: 0.5; transform: scale(0.95); }
+    .pos-product-item .card-body { padding: 0 !important; }
+
+    /* Product image area (grid) */
+    .pos-product-item .product-thumb {
+        width: 100%; height: 90px;
+        background: linear-gradient(135deg, #f0f4f8 0%, #e2e8f0 100%);
+        display: flex; align-items: center; justify-content: center;
+        overflow: hidden; position: relative;
+    }
+    .pos-product-item .product-thumb img { width: 100%; height: 100%; object-fit: cover; }
+    .pos-product-item .product-thumb .thumb-icon { font-size: 2rem; color: #b0bec5; }
+    .pos-product-item .product-meta { padding: 10px 12px; }
+    .pos-product-item .product-meta .product-name { font-size: 0.82rem; font-weight: 600; line-height: 1.3; margin-bottom: 6px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+    .pos-product-item .product-meta .product-footer { display: flex; justify-content: space-between; align-items: center; }
+    .pos-product-item .product-meta .stock-badge { font-size: 0.72rem; color: #64748b; }
+    .pos-product-item .product-meta .stock-badge span { font-weight: 700; color: #334155; }
+
+    /* View mode toggle */
+    .view-toggle .btn { padding: 4px 10px; font-size: 0.85rem; }
+    .view-toggle .btn.active { background: #0d6efd; color: #fff; border-color: #0d6efd; }
+
+    /* Grid small view */
+    .view-grid-sm .pos-product-item .product-thumb { height: 75px; }
+    .view-grid-sm .pos-product-item .product-thumb .thumb-icon { font-size: 1.4rem; }
+    .view-grid-sm .pos-product-item .product-meta { padding: 6px 8px; }
+    .view-grid-sm .pos-product-item .product-meta .product-name { font-size: 0.72rem; margin-bottom: 4px; }
+    .view-grid-sm .pos-product-item .product-meta .stock-badge { font-size: 0.65rem; }
+    .view-grid-sm .pos-product-item .product-meta .btn { padding: 2px 6px; font-size: 0.7rem; }
+
+    /* List view */
+    .view-list .pos-product-item .card-body { display: flex; align-items: center; gap: 12px; padding: 8px 12px !important; }
+    .view-list .pos-product-item .product-thumb { width: 48px; height: 48px; min-width: 48px; border-radius: 8px; }
+    .view-list .pos-product-item .product-thumb .thumb-icon { font-size: 1.2rem; }
+    .view-list .pos-product-item .product-meta { padding: 0; flex: 1; min-width: 0; }
+    .view-list .pos-product-item .product-meta .product-name { font-size: 0.82rem; margin-bottom: 0; -webkit-line-clamp: 1; }
+    .view-list .pos-product-item .product-meta .product-footer { gap: 8px; }
+
+    /* Cart drop zone highlight */
+    .cart-drop-highlight { background-color: #e8f5e9 !important; border: 2px dashed #4caf50 !important; transition: all 0.2s; }
 
     /* Variant Selection Styling */
     .variant-group-label { font-size: 0.85rem; font-weight: 600; color: #666; margin-bottom: 8px; display: block; }
@@ -88,22 +130,25 @@
                 <div class="card-body">
                     <h5 class="mb-3">Direct Sale For All Products</h5>
 
-                    <div class="row mb-3">
-    
-                        <div class="col-md-6">
+                    <div class="row mb-3 align-items-end">
+                        <div class="col-md-5">
                             <label class="form-label">Search product</label>
                             <input type="text" id="productSearch" class="form-control" placeholder="Search by model name or type...">
                         </div>
-
-                        <div class="col-md-6">
+                        <div class="col-md-5">
                             <label class="form-label">Quick IMEI</label>
                             <div class="input-group">
                                 <input type="text" id="imeiInput" class="form-control mono" placeholder="Scan / type IMEI">
                                 <button class="btn btn-primary" id="imeiAddBtn" type="button">Add</button>
                             </div>
-                            <small class="text-muted">IMEI items are sold as specific devices.</small>
                         </div>
-
+                        <div class="col-md-2">
+                            <div class="btn-group view-toggle w-100" role="group">
+                                <button type="button" class="btn btn-outline-secondary active" data-view="grid" title="Grid"><i class="fas fa-th-large"></i></button>
+                                <button type="button" class="btn btn-outline-secondary" data-view="grid-sm" title="Grid Small"><i class="fas fa-th"></i></button>
+                                <button type="button" class="btn btn-outline-secondary" data-view="list" title="List"><i class="fas fa-list"></i></button>
+                            </div>
+                        </div>
                     </div>
 
                     <div class="pos-scroll border rounded p-2" id="productResults">
@@ -145,24 +190,20 @@
                 <div class="card-body">
                     <h5 class="mb-3">Customer &amp; Payment</h5>
 
-                    <div class="row g-2 mb-3">
-                        <div class="col-md-6">
-                            <label class="form-label">Customer Name</label>
-                            <input type="text" id="customerName" class="form-control" placeholder="Required" required>
+                    <div class="mb-3">
+                        <label class="form-label">Select Customer</label>
+                        <div class="input-group">
+                            <input type="text" id="customerSearchInput" class="form-control" placeholder="Search by name, phone, email..." autocomplete="off">
+                            <input type="hidden" id="customerId" value="">
                         </div>
-                        <div class="col-md-6">
-                            <label class="form-label">Customer Phone</label>
-                            <input type="text" id="customerPhone" class="form-control" placeholder="Optional">
-                        </div>
+                        <div id="customerDropdown" class="border rounded mt-1 bg-white position-absolute shadow-sm" style="display:none; z-index:1050; max-height:200px; overflow-y:auto; width:calc(100% - 2rem);"></div>
+                        <div id="customerSelected" class="small mt-1 text-success fw-semibold" style="display:none;"></div>
                     </div>
+
                     <div id="customerExtendedInfo" style="display:none;">
                         <div class="mb-3">
                             <label class="form-label">Customer NRC</label>
                             <input type="text" id="customerNRC" class="form-control" placeholder="Required for installments">
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label">Customer Address</label>
-                            <textarea id="customerAddress" class="form-control" rows="2" placeholder="Optional"></textarea>
                         </div>
                         <div class="mb-3">
                             <label class="form-label">Attachments (NRC, Documents...)</label>
@@ -274,6 +315,14 @@
                         </div>
                     </div>
 
+                    <div class="mt-3 p-3 border rounded bg-light" id="variantPriceBox" style="display:none;">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <span class="text-muted fw-semibold" style="font-size: 0.85rem;">SELLING PRICE</span>
+                            <span id="variantPriceDisplay" class="fw-bold fs-5 text-primary">-</span>
+                        </div>
+                        <input type="hidden" id="variantResolvedPrice" value="0">
+                    </div>
+
                     {{-- <div class="alert alert-info py-2 px-3 mt-3 mb-0" style="font-size: 0.8rem;">
                         <i class="fas fa-info-circle me-1"></i> Only devices with valid IMEI are allocated.
                     </div> --}}
@@ -294,6 +343,7 @@
         const urls = {
             products: "{{ route('admin.direct_sale.products') }}",
             devices: "{{ route('admin.direct_sale.devices') }}",
+            customers: "{{ route('admin.direct_sale.customers') }}",
             variants: "{{ route('admin.direct_sale.variants', ['product' => '__id__']) }}",
             variants_stock: "{{ route('admin.direct_sale.variants_stock') }}",
             checkout: "{{ route('admin.direct_sale.checkout') }}"
@@ -315,6 +365,7 @@
          */
         let cart = [];
         let productCache = {};
+        let currentView = 'grid';
         const variantModal = new bootstrap.Modal(document.getElementById('variantModal'));
 
         function money(n) {
@@ -459,45 +510,70 @@
                         $('#productResults').html('<div class="text-muted small">No products found.</div>');
                         return;
                     }
-
-                    const cards = items.map(p => {
-                        const isNew = p.product_type === 'new';
-                        const stockText = isNew
-                            ? `Stock: <span class="fw-semibold">${p.stock_quantity}</span>`
-                            : `Devices: <span class="fw-semibold">${p.available_devices}</span>`;
-                        const addBtn = isNew
-                            ? `<button class="btn btn-md btn-primary w-100 add-qty-btn" data-product-id="${p.id}">Add</button>`
-                            : `<span class="badge bg-warning w-100">IMEI Only</span>`;
-
-                        const imgHtml = p.image
-                            ? `<img src="${productImageBase}/${p.image}" class="img-fluid rounded mb-2" style="height:150px;object-fit:cover;width:100%;">`
-                            : `<div class="bg-light rounded mb-2 d-flex align-items-center justify-content-center" style="height:90px;"><span class="text-muted small">No photo</span></div>`;
-
-                        return `
-                            <div class="col-12 col-md-6 col-xl-4 mb-2">
-                                <div class="card h-100 shadow-sm pos-product-item" data-product-id="${p.id}">
-                                    <div class="card-body py-3">
-                                        ${imgHtml}
-                                        <div class="fw-semibold mb-1">${p.brand} - ${p.label}</div>
-                                        <div class="d-flex justify-content-between align-items-center mt-1">
-                                            <div class="small text-muted mb-1">${p.brand}</div>
-                                            <div class="small mb-1">${stockText}</div>
-                                        </div>
-                                        <div class="d-flex justify-content-between align-items-center mt-1">
-                                            <div class="small">Price<br><span class="fw-semibold">${money(p.selling_price)} MMK</span></div>
-                                            <div style="width:90px;">${addBtn}</div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        `;
-                    }).join('');
-
-                    $('#productResults').html(`<div class="row g-2">${cards}</div>`);
+                    renderProducts(items);
                 })
                 .fail(function() {
                     $('#productResults').html('<div class="text-danger small">Failed to load products.</div>');
                 });
+        }
+
+        function renderProducts(items) {
+            const view = currentView;
+            const $container = $('#productResults');
+
+            const cards = items.map(p => {
+                const isNew = p.product_type === 'new';
+                const stockText = isNew
+                    ? `Stock: <span>${p.stock_quantity}</span>`
+                    : `Devices: <span>${p.available_devices}</span>`;
+                const addBtn = isNew
+                    ? `<button class="btn btn-sm btn-primary add-qty-btn" data-product-id="${p.id}"><i class="fas fa-plus"></i></button>`
+                    : `<span class="badge bg-warning">IMEI</span>`;
+                const thumbContent = p.image
+                    ? `<img src="${productImageBase}/${p.image}" alt="">`
+                    : `<i class="fas fa-mobile-alt thumb-icon"></i>`;
+
+                if (view === 'list') {
+                    return `
+                        <div class="mb-1">
+                            <div class="card shadow-sm pos-product-item" draggable="true" data-product-id="${p.id}">
+                                <div class="card-body">
+                                    <div class="product-thumb">${thumbContent}</div>
+                                    <div class="product-meta">
+                                        <div class="product-name">${p.brand} - ${p.label}</div>
+                                        <div class="product-footer">
+                                            <div class="stock-badge">${stockText}</div>
+                                            <div>${addBtn}</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>`;
+                }
+
+                const colClass = view === 'grid-sm' ? 'col-4 col-md-3 col-xl-2' : 'col-6 col-md-4 col-xl-3';
+
+                return `
+                    <div class="${colClass} mb-2">
+                        <div class="card h-100 shadow-sm pos-product-item" draggable="true" data-product-id="${p.id}">
+                            <div class="card-body">
+                                <div class="product-thumb">${thumbContent}</div>
+                                <div class="product-meta">
+                                    <div class="product-name">${p.brand} - ${p.label}</div>
+                                    <div class="product-footer">
+                                        <div class="stock-badge">${stockText}</div>
+                                        <div>${addBtn}</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>`;
+            }).join('');
+
+            const viewClass = view === 'list' ? 'view-list' : (view === 'grid-sm' ? 'view-grid-sm' : '');
+            const wrapper = view === 'list' ? cards : `<div class="row g-2">${cards}</div>`;
+            $container.html(`<div class="${viewClass}">${wrapper}</div>`);
+            initDragSource();
         }
 
         $(document).on('click', '.add-qty-btn', function() {
@@ -509,12 +585,13 @@
                 return;
             }
             
-            // Set image and name
             const imgUrl = product.image ? `${productImageBase}/${product.image}` : 'https://via.placeholder.com/300?text=No+Photo';
             $('#modalVariantImg').attr('src', imgUrl);
             $('#variantProductId').val(product.id);
             $('#variantProductName').text(`${product.brand} - ${product.label}`);
             $('#variantQty').val(1);
+            $('#variantPriceBox').hide();
+            $('#variantResolvedPrice').val(0);
 
             // Fetch variants and populate radios
             $.get(urls.variants.replace('__id__', product.id))
@@ -590,26 +667,47 @@
             const storage = $('input[name="variant_storage"]:checked').val();
             const color = $('input[name="variant_color"]:checked').val();
             const colorName = $('input[name="variant_color"]:checked').data('label') || 'Any';
+            const allSelected = ram && storage && color;
 
-            // Update UI
             $('#selectedColorName').text(colorName);
-
             $('#variantStockDisplay').html('<span class="spinner-border spinner-border-sm text-secondary"></span>');
             $('#variantAddBtn').prop('disabled', true);
+
+            if (!allSelected) {
+                $('#variantPriceBox').hide();
+                $('#variantResolvedPrice').val(0);
+            }
 
             $.get(urls.variants_stock, { product_id: productId, ram, storage, color })
                 .done(function(res) {
                     const count = res.count || 0;
                     if (count > 0) {
                         $('#variantStockDisplay').html(`<span class="text-success">${count} Available</span>`);
-                        $('#variantAddBtn').prop('disabled', false);
+                        $('#variantAddBtn').prop('disabled', !allSelected);
                     } else {
                         $('#variantStockDisplay').html('<span class="text-danger">Out of Stock</span>');
                         $('#variantAddBtn').prop('disabled', true);
                     }
+
+                    if (allSelected && res.min_price !== null) {
+                        if (res.min_price === res.max_price) {
+                            $('#variantPriceDisplay').text(money(res.min_price) + ' MMK');
+                        } else {
+                            $('#variantPriceDisplay').text(money(res.min_price) + ' ~ ' + money(res.max_price) + ' MMK');
+                        }
+                        $('#variantResolvedPrice').val(res.min_price);
+                        $('#variantPriceBox').slideDown(200);
+                    } else if (allSelected) {
+                        const product = productCache[Number(productId)];
+                        const fallback = product ? product.selling_price : 0;
+                        $('#variantPriceDisplay').text(money(fallback) + ' MMK');
+                        $('#variantResolvedPrice').val(fallback);
+                        $('#variantPriceBox').slideDown(200);
+                    }
                 })
                 .fail(function() {
                     $('#variantStockDisplay').html('<span class="text-muted">Error</span>');
+                    $('#variantPriceBox').hide();
                     $('#variantAddBtn').prop('disabled', true);
                 });
         }
@@ -699,6 +797,50 @@
             $('#monthlyAmount').text(money(monthly));
         }
 
+        // Customer search
+        let customerTimer;
+        $('#customerSearchInput').on('input', function() {
+            clearTimeout(customerTimer);
+            const q = $(this).val().trim();
+            $('#customerId').val('');
+            $('#customerSelected').hide();
+            if (q.length < 1) { $('#customerDropdown').hide(); return; }
+            customerTimer = setTimeout(() => {
+                $.get(urls.customers, { q })
+                    .done(function(res) {
+                        const items = res.data || [];
+                        const $dd = $('#customerDropdown').empty();
+                        if (items.length === 0) {
+                            $dd.html('<div class="p-2 text-muted small">No customers found.</div>').show();
+                            return;
+                        }
+                        items.forEach(c => {
+                            $dd.append(`<div class="p-2 border-bottom customer-option" style="cursor:pointer;" data-id="${c.id}" data-name="${c.name}" data-phone="${c.phone || ''}" data-email="${c.email || ''}">
+                                <div class="fw-semibold">${c.name}</div>
+                                <div class="small text-muted">${c.phone || '-'} &middot; ${c.email || '-'}</div>
+                            </div>`);
+                        });
+                        $dd.show();
+                    });
+            }, 250);
+        });
+
+        $(document).on('click', '.customer-option', function() {
+            const id = $(this).data('id');
+            const name = $(this).data('name');
+            const phone = $(this).data('phone');
+            $('#customerId').val(id);
+            $('#customerSearchInput').val(name);
+            $('#customerSelected').html(`<i class="fas fa-check-circle"></i> ${name} (${phone || 'no phone'})`).show();
+            $('#customerDropdown').hide();
+        });
+
+        $(document).on('click', function(e) {
+            if (!$(e.target).closest('#customerSearchInput, #customerDropdown').length) {
+                $('#customerDropdown').hide();
+            }
+        });
+
         // Checkout
         $('#checkoutBtn').on('click', function() {
             if (cart.length === 0) {
@@ -707,15 +849,23 @@
             }
 
             const payment_type = $('input[name="paymentType"]:checked').val();
-            const customer_name = $('#customerName').val().trim();
-            if (!customer_name) {
-                Swal.fire({ icon: 'warning', title: 'Name required', text: 'Customer name is required for the receipt.' });
+            const customer_id = $('#customerId').val();
+            if (!customer_id) {
+                Swal.fire({ icon: 'warning', title: 'Customer required', text: 'Please select a customer.' });
+                return;
+            }
+
+            if (payment_type === 'installment' && !$('#customerNRC').val().trim()) {
+                Swal.fire({ icon: 'warning', title: 'NRC required', text: 'NRC is required for installment sales.' });
+                return;
+            }
+            if (payment_type === 'installment' && !$('#installmentRate').val()) {
+                Swal.fire({ icon: 'warning', title: 'Missing plan', text: 'Please select an installment plan.' });
                 return;
             }
 
             const formData = new FormData();
-            
-            // Items
+
             cart.forEach((l, i) => {
                 formData.append(`items[${i}][product_id]`, l.product_id);
                 formData.append(`items[${i}][quantity]`, l.device_id ? 1 : l.quantity);
@@ -730,31 +880,18 @@
                 }
             });
 
-            formData.append('customer_name', customer_name);
-            formData.append('customer_phone', $('#customerPhone').val());
-            formData.append('customer_nrc', $('#customerNRC').val());
-            formData.append('customer_address', $('#customerAddress').val());
+            formData.append('customer_id', customer_id);
             formData.append('payment_type', payment_type);
 
-            if (payment_type === 'installment' && !$('#customerNRC').val().trim()) {
-                Swal.fire({ icon: 'warning', title: 'NRC required', text: 'NRC is required for installment sales.' });
-                return;
-            }
-
             if (payment_type === 'installment') {
+                formData.append('customer_nrc', $('#customerNRC').val());
                 formData.append('installment_rate_id', $('#installmentRate').val() || '');
                 formData.append('down_payment', Number($('#downPayment').val() || 0));
-            }
 
-            // Attachments
-            const files = $('#customerAttachments')[0].files;
-            for (let i = 0; i < files.length; i++) {
-                formData.append('attachments[]', files[i]);
-            }
-
-            if (payment_type === 'installment' && !$('#installmentRate').val()) {
-                Swal.fire({ icon: 'warning', title: 'Missing plan', text: 'Please select an installment plan.' });
-                return;
+                const files = $('#customerAttachments')[0].files;
+                for (let i = 0; i < files.length; i++) {
+                    formData.append('attachments[]', files[i]);
+                }
             }
 
             $('#checkoutBtn').prop('disabled', true).text('Processing…');
@@ -775,7 +912,7 @@
                 error: function(xhr) {
                     let msg = xhr.responseJSON?.message || 'Checkout failed.';
                     if (xhr.responseJSON?.errors) {
-                        msg = Object.values(xhr.responseJSON.errors).flat().join('\\n');
+                        msg = Object.values(xhr.responseJSON.errors).flat().join('\n');
                     }
                     Swal.fire({ icon: 'error', title: 'Error', text: msg });
                 },
@@ -784,6 +921,100 @@
                 }
             });
         });
+
+        // View toggle
+        $('.view-toggle .btn').on('click', function() {
+            $('.view-toggle .btn').removeClass('active');
+            $(this).addClass('active');
+            currentView = $(this).data('view');
+            const cached = Object.values(productCache);
+            if (cached.length > 0) {
+                renderProducts(cached);
+            }
+        });
+
+        // Drag and drop
+        function initDragSource() {
+            document.querySelectorAll('.pos-product-item[draggable="true"]').forEach(el => {
+                el.addEventListener('dragstart', function(e) {
+                    const pid = this.dataset.productId;
+                    e.dataTransfer.setData('text/plain', pid);
+                    e.dataTransfer.effectAllowed = 'copy';
+                    this.classList.add('dragging');
+                });
+                el.addEventListener('dragend', function() {
+                    this.classList.remove('dragging');
+                    $('#cartTable').closest('.card').removeClass('cart-drop-highlight');
+                });
+            });
+        }
+
+        const cartCard = document.querySelector('#cartTable')?.closest('.card');
+        if (cartCard) {
+            cartCard.addEventListener('dragover', function(e) {
+                e.preventDefault();
+                e.dataTransfer.dropEffect = 'copy';
+                this.classList.add('cart-drop-highlight');
+            });
+            cartCard.addEventListener('dragleave', function(e) {
+                if (!this.contains(e.relatedTarget)) {
+                    this.classList.remove('cart-drop-highlight');
+                }
+            });
+            cartCard.addEventListener('drop', function(e) {
+                e.preventDefault();
+                this.classList.remove('cart-drop-highlight');
+                const pid = Number(e.dataTransfer.getData('text/plain'));
+                const product = productCache[pid];
+                if (!product) return;
+
+                if (product.product_type !== 'new') {
+                    Swal.fire({ toast: true, position: 'top-end', icon: 'info', title: 'Use IMEI to add second-hand products', timer: 2000, showConfirmButton: false });
+                    return;
+                }
+                if (product.stock_quantity <= 0) {
+                    Swal.fire({ toast: true, position: 'top-end', icon: 'warning', title: 'Out of stock', timer: 1500, showConfirmButton: false });
+                    return;
+                }
+
+                // Open variant modal (same as clicking Add)
+                const imgUrl = product.image ? `${productImageBase}/${product.image}` : 'https://via.placeholder.com/300?text=No+Photo';
+                $('#modalVariantImg').attr('src', imgUrl);
+                $('#variantProductId').val(product.id);
+                $('#variantProductName').text(`${product.brand} - ${product.label}`);
+                $('#variantQty').val(1);
+                $('#variantPriceBox').hide();
+                $('#variantResolvedPrice').val(0);
+
+                $.get(urls.variants.replace('__id__', product.id))
+                    .done(function(res) {
+                        const v = res.data;
+                        const renderTiles = (container, items, name) => {
+                            const $c = $(container).empty();
+                            $c.append(`<div class="variant-tile shadow-sm"><input type="radio" name="${name}" id="${name}_any" value="" class="variant-tile-input variant-option" checked><label for="${name}_any" class="variant-tile-label">Any</label></div>`);
+                            (items || []).forEach(x => {
+                                $c.append(`<div class="variant-tile shadow-sm"><input type="radio" name="${name}" id="${name}_${x.id}" value="${x.id}" data-label="${x.name}" class="variant-tile-input variant-option"><label for="${name}_${x.id}" class="variant-tile-label">${x.name}</label></div>`);
+                            });
+                        };
+                        const renderSwatchesLocal = (container, items) => {
+                            const $c = $(container).empty();
+                            $c.append(`<div class="color-swatch"><input type="radio" name="variant_color" id="color_any" value="" class="color-swatch-input variant-option" checked><label for="color_any" class="color-swatch-label" style="background:#eee; color:#666;" title="Any"><i class="fas fa-ban fa-xs"></i></label></div>`);
+                            (items || []).forEach(x => {
+                                $c.append(`<div class="color-swatch"><input type="radio" name="variant_color" id="color_${x.id}" value="${x.id}" data-label="${x.name}" class="color-swatch-input variant-option"><label for="color_${x.id}" class="color-swatch-label" style="background-color: ${x.value};" title="${x.name}"><i class="fas fa-check check-mark"></i></label></div>`);
+                            });
+                        };
+                        renderTiles('#variantRamList', v.ram, 'variant_ram');
+                        renderTiles('#variantStorageList', v.storage, 'variant_storage');
+                        renderSwatchesLocal('#variantColorList', v.color);
+                        variantModal.show();
+                        checkVariantStock();
+                        $('.variant-option').on('change', function() { checkVariantStock(); });
+                    })
+                    .fail(function() {
+                        upsertQtyProduct(product, 1);
+                    });
+            });
+        }
 
         // Initial load
         loadProducts('');
@@ -806,6 +1037,9 @@
             const color_id = $('input[name="variant_color"]:checked').val() || null;
             const color_val = $('input[name="variant_color"]:checked').data('label');
 
+            const resolvedPrice = Number($('#variantResolvedPrice').val() || 0);
+            const unitPrice = resolvedPrice > 0 ? resolvedPrice : Number(product.selling_price || 0);
+
             const key = `p-${product.id}-${ram_id || 'any'}-${storage_id || 'any'}-${color_id || 'any'}`;
             const existing = cart.find(x => x.key === key);
 
@@ -824,7 +1058,7 @@
                     key,
                     product_id: product.id,
                     product_label: product.label + labelSuffix,
-                    unit_price: product.selling_price,
+                    unit_price: unitPrice,
                     discount_price: 0,
                     quantity: qty,
                     ram_option_id: ram_id,

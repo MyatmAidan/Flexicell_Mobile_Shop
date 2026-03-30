@@ -11,12 +11,13 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('warranties', function (Blueprint $table) {
+        Schema::create('payment_customers', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('device_id')->constrained()->cascadeOnDelete();
-            $table->date('start_date');
-            $table->date('end_date');
-            $table->string('status');
+            $table->foreignId('customer_id')->constrained()->cascadeOnDelete();
+            $table->string('payment_method');
+            $table->decimal('amount', 10, 2);
+            $table->string('nrc')->nullable();
+            $table->json('attachments')->nullable();
             $table->timestamps();
         });
     }
@@ -26,6 +27,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('warranty');
+        Schema::dropIfExists('payment_customers');
     }
 };

@@ -8,13 +8,13 @@ class Warranty extends Model
 {
     protected $guarded = ['id'];
 
-    public function product()
-    {
-        return $this->belongsTo(Product::class);
-    }
-
     public function devices()
     {
         return $this->hasMany(Device::class);
+    }
+
+    public function warrantyDetails()
+    {
+        return $this->hasMany(WarrantyDetail::class);
     }
 }
