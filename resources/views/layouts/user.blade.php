@@ -263,6 +263,8 @@
                     </li>
                             <li class="{{ request()->routeIs('trade_in') ? 'active' : '' }}"><a
                                     href="{{ route('trade_in') }}"> Trade-In</a></li>
+                                    <li class="{{ request()->routeIs('warranty.check') ? 'active' : '' }}"><a
+                                            href="{{ route('warranty.check') }}">Warranty check</a></li>
                             <li class="{{ request()->routeIs('blogs.index') || request()->routeIs('blogs.show') ? 'active' : '' }}"><a
                                     href="{{ route('blogs.index') }}">Blog</a></li>
                             <li class="{{ request()->routeIs('about') ? 'active' : '' }}"><a

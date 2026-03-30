@@ -105,6 +105,43 @@
             width: 50px;
             background-color: #D10024;
         }
+        .home-blog-card {
+            border: 1px solid #e4e4e4;
+            border-radius: 8px;
+            overflow: hidden;
+            transition: box-shadow .2s;
+            background: #fff;
+            height: 100%;
+        }
+        .home-blog-card:hover { box-shadow: 0 4px 16px rgba(0,0,0,.12); }
+        .home-blog-card-img {
+            width: 100%;
+            height: 180px;
+            object-fit: cover;
+        }
+        .home-blog-card-body { padding: 14px; }
+        .home-blog-card-title {
+            font-size: 15px;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 6px;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+            min-height: 2.6em;
+        }
+        .home-blog-card-meta { font-size: 12px; color: #999; margin-bottom: 10px; }
+        .home-blog-read {
+            background: #D10024;
+            color: #fff;
+            border-radius: 4px;
+            padding: 6px 14px;
+            font-size: 13px;
+            text-decoration: none;
+            display: inline-block;
+        }
+        .home-blog-read:hover { background: #b8001f; color: #fff; }
     </style>
 @endsection
 @section('content')
@@ -256,6 +293,53 @@
         <!-- /container -->
     </div>
     <!-- /HOT DEAL SECTION -->
+
+    <!-- BLOG SECTION -->
+    @if(isset($blogs) && $blogs->isNotEmpty())
+    <div class="section">
+        <div class="container">
+            <div class="row">
+                <div class="col-md-12">
+                    <div class="section-title d-flex flex-wrap justify-content-between align-items-end gap-2">
+                        <h3 class="title mb-0">Latest from the blog</h3>
+                        <a href="{{ route('blogs.index') }}" class="btn btn-sm btn-outline-dark" style="border-radius: 4px;">
+                            View all <i class="fa fa-arrow-right ms-1"></i>
+                        </a>
+                    </div>
+                </div>
+            </div>
+            <div class="row">
+                @foreach ($blogs as $blog)
+                    <div class="col-md-4 col-sm-6 mb-4">
+                        <div class="home-blog-card">
+                            @if ($blog->thumbnail)
+                                <img src="{{ asset('storage/blogs/' . $blog->thumbnail) }}"
+                                    alt="{{ $blog->title }}" class="home-blog-card-img">
+                            @else
+                                <div class="home-blog-card-img d-flex align-items-center justify-content-center bg-light">
+                                    <i class="fa fa-newspaper-o fa-3x text-muted"></i>
+                                </div>
+                            @endif
+                            <div class="home-blog-card-body">
+                                <div class="home-blog-card-meta">
+                                    <i class="fa fa-calendar-o"></i>
+                                    {{ $blog->created_at->format('M d, Y') }}
+                                    &nbsp;&middot;&nbsp;
+                                    {{ $blog->contents_count }} {{ $blog->contents_count === 1 ? 'section' : 'sections' }}
+                                </div>
+                                <div class="home-blog-card-title">{{ $blog->title }}</div>
+                                <a href="{{ route('blogs.show', $blog) }}" class="home-blog-read">
+                                    Read more <i class="fa fa-arrow-right"></i>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                @endforeach
+            </div>
+        </div>
+    </div>
+    @endif
+    <!-- /BLOG SECTION -->
 
     <!-- POPULAR PRODUCTS SECTION -->
     <div class="section">

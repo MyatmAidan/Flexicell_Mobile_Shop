@@ -39,6 +39,14 @@ class Order extends Model
         return $this->hasOne(Installment::class);
     }
 
+    /**
+     * Installment checkout details (NRC, attachments) from direct sale.
+     */
+    public function paymentCustomer()
+    {
+        return $this->hasOne(PaymentCustomer::class);
+    }
+
     public function devices()
     {
         return $this->hasMany(Device::class);

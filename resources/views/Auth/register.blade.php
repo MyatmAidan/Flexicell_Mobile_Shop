@@ -40,6 +40,32 @@
                                 @enderror
                             </div>
 
+                            <!-- Phone -->
+                            <div class="mb-3">
+                                <label class="form-label" for="phone">Phone <span class="text-muted small">(optional)</span></label>
+                                <input id="phone" type="text"
+                                    class="form-control @error('phone') is-invalid @enderror" name="phone"
+                                    value="{{ old('phone') }}" placeholder="09 xxx xxx xxx" autocomplete="tel">
+                                @error('phone')
+                                    <span class="invalid-feedback" role="alert">
+                                        <strong>{{ $message }}</strong>
+                                    </span>
+                                @enderror
+                            </div>
+
+                            <!-- Address -->
+                            <div class="mb-3">
+                                <label class="form-label" for="address">Address <span class="text-muted small">(optional)</span></label>
+                                <textarea id="address" name="address" rows="2"
+                                    class="form-control @error('address') is-invalid @enderror"
+                                    placeholder="Your address">{{ old('address') }}</textarea>
+                                @error('address')
+                                    <span class="invalid-feedback" role="alert">
+                                        <strong>{{ $message }}</strong>
+                                    </span>
+                                @enderror
+                            </div>
+
                             <!-- Password -->
                             <div class="mb-3">
                                 <label class="form-label" for="password">Password</label>

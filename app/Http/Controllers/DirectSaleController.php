@@ -504,6 +504,7 @@ class DirectSaleController extends Controller
                 }
 
                 PaymentCustomer::create([
+                    'order_id'       => $order->id,
                     'customer_id'    => $customer->id,
                     'payment_method' => 'installment',
                     'amount'         => $grandTotal,

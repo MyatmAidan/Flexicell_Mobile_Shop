@@ -19,10 +19,12 @@ use App\Http\Controllers\ProductController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\UserPermissionController;
+use App\Http\Controllers\WarrantyCheckController;
 use App\Http\Controllers\WarrantyDetailController;
+use App\Models\Blog;
+use App\Models\Brand;
 use App\Models\Category;
 use App\Models\Product;
-use App\Models\Brand;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -40,7 +42,9 @@ Route::get('/', function () {
         ->take(12)
         ->get();
 
-    return view('index', compact('categories', 'new_products', 'popular_products', 'best_sellers'));
+    $blogs = Blog::withCount('contents')->latest()->take(6)->get();
+
+    return view('index', compact('categories', 'new_products', 'popular_products', 'best_sellers', 'blogs'));
 })->name('home');
 
 Route::get('/products', function () {
@@ -71,6 +75,8 @@ Route::get('/trade-in', function () {
 // Blog (public)
 Route::get('/blog', [BlogFrontController::class, 'index'])->name('blogs.index');
 Route::get('/blog/{blog}', [BlogFrontController::class, 'show'])->name('blogs.show');
+
+Route::match(['get', 'post'], '/warranty-check', [WarrantyCheckController::class, 'index'])->name('warranty.check');
 
 
 Route::get('/trade-in/estimate', function () {

@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Installment;
 use App\Models\InstallmentPayment;
+use App\Models\PaymentCustomer;
 use Illuminate\Http\Request;
 
 class InstallmentController extends Controller
@@ -104,11 +105,23 @@ class InstallmentController extends Controller
         $installment = Installment::with([
             'order.items.product.phoneModel.brand',
             'order.items.device',
+            'order.customer',
+            'order.paymentCustomer',
             'rate',
             'payments',
         ])->findOrFail($id);
 
-        return view('admin.installment.show', compact('installment'));
+        $paymentCustomer = $installment->order?->paymentCustomer;
+        if (!$paymentCustomer && $installment->order?->customer_id) {
+            $paymentCustomer = PaymentCustomer::query()
+                ->where('customer_id', $installment->order->customer_id)
+                ->where('payment_method', 'installment')
+                ->whereRaw('ABS(amount - ?) < 0.01', [$installment->order->grand_total])
+                ->orderByDesc('id')
+                ->first();
+        }
+
+        return view('admin.installment.show', compact('installment', 'paymentCustomer'));
     }
 
     public function markPaid($paymentId)

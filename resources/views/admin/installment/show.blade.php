@@ -41,7 +41,23 @@
                     </tr>
                     <tr>
                         <td class="text-muted">Customer</td>
-                        <td class="text-end">{{ $installment->order?->shipping_address ?: 'Walk-in' }}</td>
+                        <td class="text-end">{{ $installment->order?->customer?->name ?? ($installment->order?->shipping_address ?: 'Walk-in') }}</td>
+                    </tr>
+                    <tr>
+                        <td class="text-muted">NRC</td>
+                        <td class="text-end">{{ $paymentCustomer?->nrc ?: '-' }}</td>
+                    </tr>
+                    <tr>
+                        <td class="text-muted">Attachments</td>
+                        <td class="text-end">
+                            @if($paymentCustomer && !empty($paymentCustomer->attachments))
+                                <button type="button" class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#installmentAttachmentsModal">
+                                    <i class="fas fa-paperclip me-1"></i> View attachments
+                                </button>
+                            @else
+                                <span class="text-muted">—</span>
+                            @endif
+                        </td>
                     </tr>
                     <tr>
                         <td class="text-muted">Plan</td>
@@ -169,6 +185,54 @@
         </div>
     </div>
 </div>
+
+@if($paymentCustomer && !empty($paymentCustomer->attachments))
+<div class="modal fade" id="installmentAttachmentsModal" tabindex="-1" aria-labelledby="installmentAttachmentsModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="installmentAttachmentsModalLabel">
+                    <i class="fas fa-paperclip me-2 text-primary"></i>Installment attachments
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row g-3">
+                    @foreach($paymentCustomer->attachments as $path)
+                        @php
+                            $url = asset('storage/' . $path);
+                            $ext = strtolower(pathinfo($path, PATHINFO_EXTENSION));
+                            $isImage = in_array($ext, ['jpg', 'jpeg', 'png', 'gif', 'webp'], true);
+                        @endphp
+                        <div class="col-md-6">
+                            <div class="border rounded p-2 h-100">
+                                @if($isImage)
+                                    <a href="{{ $url }}" target="_blank" rel="noopener">
+                                        <img src="{{ $url }}" alt="" class="img-fluid rounded w-100" style="max-height: 280px; object-fit: contain;">
+                                    </a>
+                                @else
+                                    <div class="d-flex align-items-center gap-2 p-2">
+                                        <i class="fas fa-file-pdf fa-2x text-danger"></i>
+                                        <div>
+                                            <div class="small text-muted text-break">{{ basename($path) }}</div>
+                                            <a href="{{ $url }}" target="_blank" rel="noopener" class="btn btn-sm btn-outline-primary mt-1">
+                                                <i class="fas fa-external-link-alt me-1"></i>Open file
+                                            </a>
+                                        </div>
+                                    </div>
+                                @endif
+                            </div>
+                        </div>
+                    @endforeach
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+@endif
 @endsection
 
 @section('script')
