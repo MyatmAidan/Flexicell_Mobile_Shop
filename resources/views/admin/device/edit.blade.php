@@ -43,7 +43,7 @@
                                     <select class="form-control" id="product_id" name="product_id" required>
                                         <option value="">Select Product</option>
                                         @foreach ($products as $p)
-                                            <option value="{{ $p->id }}" {{ old('product_id', $device->product_id) == $p->id ? 'selected' : '' }}>
+                                            <option value="{{ $p->id }}" {{ old('product_id', $device->productVariant?->product_id) == $p->id ? 'selected' : '' }}>
                                                 {{ $p->phoneModel->model_name ?? '-' }} ({{ $p->product_type }}) - {{ $p->phoneModel->brand->brand_name ?? '' }}
                                             </option>
                                         @endforeach
@@ -140,23 +140,21 @@
                             </div>
                         </div>
                         <div class="row">
-                            <div class="col-md-6">
+                            <div class="col-md-4">
                                 <div class="form-group mb-3">
                                     <label for="purchase_price" class="form-label">Purchase Price</label>
                                     <input type="number" step="0.01" class="form-control" id="purchase_price" name="purchase_price"
                                         placeholder="0.00" value="{{ old('purchase_price', $device->purchase_price) }}">
                                 </div>
                             </div>
-                            <div class="col-md-6">
+                            <div class="col-md-4">
                                 <div class="form-group mb-3">
                                     <label for="selling_price" class="form-label">Selling Price</label>
                                     <input type="number" step="0.01" class="form-control" id="selling_price" name="selling_price"
                                         placeholder="0.00" value="{{ old('selling_price', $device->selling_price) }}">
                                 </div>
                             </div>
-                        </div>
-                        <div class="row">
-                            <div class="col-md-6">
+                            <div class="col-md-4">
                                 <div class="form-group mb-3">
                                     <label for="warranty_id" class="form-label">Warranty</label>
                                     <select class="form-control" id="warranty_id" name="warranty_id">
@@ -284,7 +282,15 @@
                 processData: false,
                 contentType: false,
                 success: function(response) {
-                    Swal.fire({ icon: 'success', title: 'Success', text: response.message }).then(() => {
+                    Swal.fire({
+                        toast: true,
+                        position: 'top-end',
+                        icon: 'success',
+                        title: response.message || 'Saved',
+                        showConfirmButton: false,
+                        timer: 2000,
+                        timerProgressBar: true,
+                    }).then(() => {
                         window.location.href = "{{ route('admin.device.index') }}";
                     });
                 },

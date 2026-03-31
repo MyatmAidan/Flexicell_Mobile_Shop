@@ -106,8 +106,12 @@ class OrderController extends Controller
             'items.device',
             'installment.rate',
             'installment.payments',
+            'tradeIn.secondPhonePurchase.phoneModel.brand',
+            'tradeIn.secondPhonePurchase.ramOption',
+            'tradeIn.secondPhonePurchase.storageOption',
+            'tradeIn.secondPhonePurchase.colorOption',
         ])->findOrFail($id);
-    
+
         return view('admin.order.show', compact('order'));
     }
 
@@ -119,6 +123,10 @@ class OrderController extends Controller
             'items.device',
             'installment.rate',
             'installment.payments',
+            'tradeIn.secondPhonePurchase.phoneModel.brand',
+            'tradeIn.secondPhonePurchase.ramOption',
+            'tradeIn.secondPhonePurchase.storageOption',
+            'tradeIn.secondPhonePurchase.colorOption',
         ])->findOrFail($id);
 
         return view('admin.order.receipt', compact('order'));

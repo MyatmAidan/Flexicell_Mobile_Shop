@@ -26,7 +26,12 @@ class ProductController extends Controller
     public function getList()
     {
         $this->requirePermission('products.view');
-        $products = Product::with('phoneModel.brand', 'phoneModel.category');
+        $products = Product::with('phoneModel.brand', 'phoneModel.category')
+            ->withCount([
+                'devices as available_devices_count' => function ($q) {
+                    $q->where('status', 'available')->whereNull('order_id');
+                },
+            ]);
 
         return DataTables::of($products)
             ->addColumn('plus-icon', function () {
@@ -102,15 +107,12 @@ class ProductController extends Controller
                 ->where('product_type', $request->product_type)
                 ->first();
 
-            if ($product) {
-                $product->increment('stock_quantity', $isSecondHand ? 1 : ($request->stock_quantity ?? 0));
-            } else {
+            if (! $product) {
                 $product = Product::create([
                     'phone_model_id' => $request->phone_model_id,
                     'product_type' => $request->product_type,
                     'image' => $imageFiles ?: null,
                     'description' => $request->description,
-                    'stock_quantity' => $isSecondHand ? 1 : ($request->stock_quantity ?? 0),
                 ]);
             }
 
@@ -136,13 +138,17 @@ class ProductController extends Controller
                     'purchase_at' => $request->purchase_at ?? now(),
                 ]);
 
+                $variantId = VariantStock::findOrCreateVariantId(
+                    $product->id,
+                    $request->ram_option_id ? (int) $request->ram_option_id : null,
+                    $request->storage_option_id ? (int) $request->storage_option_id : null,
+                    $colorOptionId
+                );
+
                 $device = Device::create([
-                    'product_id' => $product->id,
+                    'product_variant_id' => $variantId,
                     'second_purchase_id' => $purchase->id,
                     'imei' => $request->imei,
-                    'ram_option_id' => $request->ram_option_id,
-                    'storage_option_id' => $request->storage_option_id,
-                    'color_option_id' => $colorOptionId,
                     'warranty_id' => $request->warranty_id ?: null,
                     'battery_percentage' => $request->battery_percentage,
                     'condition_grade' => $request->condition_grade,
@@ -156,15 +162,13 @@ class ProductController extends Controller
                 $stockQuantity = (int) ($request->stock_quantity ?? 0);
 
                 if ($stockQuantity > 0) {
+                    $defaultVariantId = VariantStock::findOrCreateVariantId($product->id, null, null, null);
                     $devices = [];
 
                     for ($i = 1; $i <= $stockQuantity; $i++) {
                         $devices[] = [
-                            'product_id' => $product->id,
+                            'product_variant_id' => $defaultVariantId,
                             'imei' => 'PENDING-' . $product->id . '-' . $i . '-' . uniqid(),
-                            'ram_option_id' => null,
-                            'storage_option_id' => null,
-                            'color_option_id' => null,
                             'warranty_id' => $request->warranty_id ?: null,
                             'battery_percentage' => 0,
                             'condition_grade' => 'NEW',
@@ -175,6 +179,7 @@ class ProductController extends Controller
                     }
 
                     Device::insert($devices);
+                    VariantStock::syncProductVariantStock($product->id);
                 }
 
             }
@@ -200,8 +205,8 @@ class ProductController extends Controller
     public function edit($id)
     {
         $this->requirePermission('products.update');
-        $product = Product::with(['phoneModel', 'devices' => function($q) {
-            $q->with(['ramOption', 'storageOption', 'colorOption']);
+        $product = Product::with(['phoneModel', 'devices' => function ($q) {
+            $q->with(['productVariant.ramOption', 'productVariant.storageOption', 'productVariant.colorOption']);
         }])->findOrFail($id);
         $phoneModels = Phone_model::with('brand', 'category')->get();
         $products = Product::with('phoneModel.brand')->get();
@@ -251,14 +256,12 @@ class ProductController extends Controller
 
             if ($newStockQuantity > $currentDeviceCount) {
                 $toAdd = $newStockQuantity - $currentDeviceCount;
+                $defaultVariantId = VariantStock::findOrCreateVariantId($product->id, null, null, null);
                 $devices = [];
                 for ($i = 1; $i <= $toAdd; $i++) {
                     $devices[] = [
-                        'product_id' => $product->id,
+                        'product_variant_id' => $defaultVariantId,
                         'imei' => 'PENDING-' . $product->id . '-' . ($currentDeviceCount + $i) . '-' . uniqid(),
-                        'ram_option_id' => null,
-                        'storage_option_id' => null,
-                        'color_option_id' => null,
                         'battery_percentage' => 0,
                         'condition_grade' => 'NEW',
                         'status' => 'available',
@@ -267,6 +270,7 @@ class ProductController extends Controller
                     ];
                 }
                 Device::insert($devices);
+                VariantStock::syncProductVariantStock($product->id);
             }
 
             $product->update([
@@ -274,7 +278,6 @@ class ProductController extends Controller
                 'product_type' => $request->product_type,
                 'image' => $newImages ?: null,
                 'description' => $request->description,
-                'stock_quantity' => $newStockQuantity,
             ]);
 
             DB::commit();

@@ -107,21 +107,19 @@
                         </div>
                     </div>
                     <div class="row">
-                        <div class="col-md-6">
+                        <div class="col-md-4">
                             <div class="form-group mb-3">
                                 <label for="modal_purchase_price" class="form-label">Purchase Price</label>
                                 <input type="number" step="0.01" class="form-control" id="modal_purchase_price" name="purchase_price" placeholder="0.00">
                             </div>
                         </div>
-                        <div class="col-md-6">
+                        <div class="col-md-4">
                             <div class="form-group mb-3">
                                 <label for="modal_selling_price" class="form-label">Selling Price</label>
                                 <input type="number" step="0.01" class="form-control" id="modal_selling_price" name="selling_price" placeholder="0.00">
                             </div>
                         </div>
-                    </div>
-                    <div class="row">
-                        <div class="col-md-6">
+                        <div class="col-md-4">
                             <div class="form-group mb-3">
                                 <label for="modal_warranty_id" class="form-label">Warranty</label>
                                 <select class="form-control" id="modal_warranty_id" name="warranty_id">

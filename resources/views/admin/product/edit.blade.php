@@ -116,9 +116,9 @@
                                     @foreach ($product->devices as $index => $device)
                                         <tr data-device-id="{{ $device->id }}"
                                             data-imei="{{ $device->imei }}"
-                                            data-ram_option_id="{{ $device->ram_option_id }}"
-                                            data-storage_option_id="{{ $device->storage_option_id }}"
-                                            data-color_option_id="{{ $device->color_option_id }}"
+                                            data-ram_option_id="{{ $device->productVariant?->ram_option_id }}"
+                                            data-storage_option_id="{{ $device->productVariant?->storage_option_id }}"
+                                            data-color_option_id="{{ $device->productVariant?->color_option_id }}"
                                             data-warranty_id="{{ $device->warranty_id }}"
                                             data-battery="{{ $device->battery_percentage }}"
                                             data-condition="{{ $device->condition_grade }}"
@@ -126,12 +126,12 @@
                                             data-purchase_price="{{ $device->purchase_price }}"
                                             data-selling_price="{{ $device->selling_price }}"
                                             data-image="{{ is_array($device->image) ? json_encode($device->image) : ($device->image ? json_encode([$device->image]) : '[]') }}"
-                                            data-product-id="{{ $device->product_id }}">
+                                            data-product-id="{{ $device->productVariant?->product_id ?? $product->id }}">
                                             <td>{{ $index + 1 }}</td>
                                             <td class="device-imei">{{ $device->imei ?? '-' }}</td>
-                                            <td class="device-ram">{{ $device->ramOption?->value ?? '-' }}</td>
-                                            <td class="device-storage">{{ $device->storageOption?->value ?? '-' }}</td>
-                                            <td class="device-color">{{ $device->colorOption?->value ?? '-' }}</td>
+                                            <td class="device-ram">{{ $device->productVariant?->ramOption?->value ?? '-' }}</td>
+                                            <td class="device-storage">{{ $device->productVariant?->storageOption?->value ?? '-' }}</td>
+                                            <td class="device-color">{{ $device->productVariant?->colorOption?->value ?? '-' }}</td>
                                             <td><span class="badge bg-{{ $device->status == 'available' ? 'success' : ($device->status == 'sold' ? 'secondary' : 'warning') }} device-status">{{ $device->status }}</span></td>
                                             <td>
                                                 <button type="button" class="btn btn-sm btn-outline-primary edit-device-btn" data-device-id="{{ $device->id }}">
@@ -243,7 +243,15 @@
                 processData: false,
                 contentType: false,
                 success: function(response) {
-                    Swal.fire({ icon: 'success', title: 'Success', text: response.message }).then(() => {
+                    Swal.fire({
+                        toast: true,
+                        position: 'top-end',
+                        icon: 'success',
+                        title: response.message || 'Saved',
+                        showConfirmButton: false,
+                        timer: 2000,
+                        timerProgressBar: true,
+                    }).then(() => {
                         window.location.href = "{{ route('admin.product.index') }}";
                     });
                 },
@@ -360,7 +368,15 @@
                 contentType: false,
                 success: function(response) {
                     deviceEditModal.hide();
-                    Swal.fire({ toast: true, position: 'top-end', icon: 'success', title: response.message, timer: 2000, showConfirmButton: false });
+                    Swal.fire({
+                        toast: true,
+                        position: 'top-end',
+                        icon: 'success',
+                        title: response.message,
+                        showConfirmButton: false,
+                        timer: 2000,
+                        timerProgressBar: true,
+                    });
                     const row = $(`tr[data-device-id="${deviceId}"]`);
                     row.data('imei', $('#modal_imei').val());
                     row.data('ram_option_id', $('#modal_ram').val());

@@ -369,9 +369,13 @@
                     contentType: false,
                     success: function(response) {
                         Swal.fire({
+                            toast: true,
+                            position: 'top-end',
                             icon: 'success',
-                            title: 'Success',
-                            text: response.message,
+                            title: response.message || 'Saved',
+                            showConfirmButton: false,
+                            timer: 2000,
+                            timerProgressBar: true,
                         }).then(() => {
                             window.location.href = "{{ route('admin.phone_model.index') }}";
                         });

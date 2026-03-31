@@ -276,11 +276,11 @@
                                         <td>{{ $product->phoneModel->model_name ?? 'N/A' }}</td>
                                         <td>{{ $product->phoneModel->category->category_name ?? 'N/A' }}</td>
                                         <td>{{ $product->phoneModel->brand->brand_name ?? 'N/A' }}</td>
-                                        <td>{{ $product->devices_count ?? 0 }}</td>
+                                        <td>{{ $product->available_device_count ?? 0 }}</td>
                                         <td>
                                             <span
-                                                class="badge bg-{{ $product->stock_quantity > 10 ? 'success' : ($product->stock_quantity > 0 ? 'warning' : 'danger') }}">
-                                                {{ $product->stock_quantity }}
+                                                class="badge bg-{{ $product->available_device_count > 10 ? 'success' : ($product->available_device_count > 0 ? 'warning' : 'danger') }}">
+                                                {{ $product->available_device_count }}
                                             </span>
                                         </td>
                                     </tr>

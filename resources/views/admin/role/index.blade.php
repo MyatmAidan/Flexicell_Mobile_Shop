@@ -97,8 +97,9 @@ $(document).ready(function () {
                     position: 'top-end',
                     icon: 'success',
                     title: res.message,
+                    showConfirmButton: false,
                     timer: 2000,
-                    showConfirmButton: false
+                    timerProgressBar: true,
                 });
                 datatable.ajax.reload(null, false);
             },
@@ -133,7 +134,13 @@ $(document).ready(function () {
                 success: function (res) {
                     if (res.status) {
                         Swal.fire({
-                            toast: true, position: 'top-end', icon: 'success', title: res.message, timer: 2000, showConfirmButton: false
+                            toast: true,
+                            position: 'top-end',
+                            icon: 'success',
+                            title: res.message,
+                            showConfirmButton: false,
+                            timer: 2000,
+                            timerProgressBar: true,
                         });
                         datatable.ajax.reload(null, false);
                     } else {

@@ -32,9 +32,9 @@ class WarrantyCheckController extends Controller
                 ->with([
                     'product.phoneModel.brand',
                     'product.phoneModel.category',
-                    'ramOption',
-                    'storageOption',
-                    'colorOption',
+                    'productVariant.ramOption',
+                    'productVariant.storageOption',
+                    'productVariant.colorOption',
                     'warranty',
                 ])
                 ->where('imei', 'not like', 'PENDING-%')

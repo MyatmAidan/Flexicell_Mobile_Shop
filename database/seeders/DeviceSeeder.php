@@ -202,21 +202,29 @@ class DeviceSeeder extends Seeder
             $storageId = VariantStock::upsertOption('storage_options', $d['storage']);
             $colorId   = VariantStock::upsertOption('color_options', $d['color']);
 
+            $variantId = VariantStock::findOrCreateVariantId(
+                (int) $d['product_id'],
+                $ramId,
+                $storageId,
+                $colorId
+            );
+
             Device::updateOrCreate(
                 ['imei' => $d['imei']],
                 [
-                    'product_id'        => $d['product_id'],
-                    'ram_option_id'     => $ramId,
-                    'storage_option_id' => $storageId,
-                    'color_option_id'   => $colorId,
-                    'warranty_id'       => $d['warranty_id'],
+                    'product_variant_id' => $variantId,
+                    'warranty_id'        => $d['warranty_id'],
                     'battery_percentage' => $d['battery_percentage'],
-                    'condition_grade'   => $d['condition_grade'],
-                    'status'            => $d['status'],
-                    'purchase_price'    => $d['purchase_price'],
-                    'selling_price'     => $d['selling_price'],
+                    'condition_grade'    => $d['condition_grade'],
+                    'status'             => $d['status'],
+                    'purchase_price'     => $d['purchase_price'],
+                    'selling_price'      => $d['selling_price'],
                 ]
             );
+        }
+
+        foreach (Product::pluck('id') as $pid) {
+            VariantStock::syncProductVariantStock((int) $pid);
         }
     }
 }

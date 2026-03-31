@@ -72,6 +72,53 @@
                     </div>
                 </div>
 
+                @if($order->tradeIn && $order->tradeIn->secondPhonePurchase)
+                    @php $pur = $order->tradeIn->secondPhonePurchase; @endphp
+                    <div class="card border-success bg-success bg-opacity-10 mb-4">
+                        <div class="card-body">
+                            <h6 class="card-title text-success mb-3"><i class="fas fa-exchange-alt me-1"></i> Trade-In (customer device)</h6>
+                            <div class="row g-3 small">
+                                <div class="col-sm-6 col-md-4">
+                                    <div class="info-label">Model</div>
+                                    <div class="info-value">
+                                        {{ $pur->phoneModel?->brand?->brand_name }} {{ $pur->phoneModel?->model_name }}
+                                    </div>
+                                </div>
+                                <div class="col-sm-6 col-md-4">
+                                    <div class="info-label">IMEI</div>
+                                    <div class="info-value mono">{{ $pur->imei }}</div>
+                                </div>
+                                <div class="col-sm-6 col-md-4">
+                                    <div class="info-label">Trade-In value (credit)</div>
+                                    <div class="info-value text-success">−{{ number_format($order->tradeIn->trade_in_credit) }} Ks</div>
+                                </div>
+                                <div class="col-sm-4 col-md-3">
+                                    <div class="info-label">Condition</div>
+                                    <div class="info-value">{{ $pur->condition_grade }}</div>
+                                </div>
+                                <div class="col-sm-4 col-md-3">
+                                    <div class="info-label">Battery</div>
+                                    <div class="info-value">{{ $pur->battery_percentage }}%</div>
+                                </div>
+                                @if($pur->ramOption || $pur->storageOption || $pur->colorOption)
+                                <div class="col-sm-12 col-md-6">
+                                    <div class="info-label">Specs</div>
+                                    <div class="info-value">
+                                        {{ collect([$pur->ramOption?->name, $pur->storageOption?->name, $pur->colorOption?->name])->filter()->implode(' / ') ?: '—' }}
+                                    </div>
+                                </div>
+                                @endif
+                                @if($pur->purchase_at)
+                                <div class="col-sm-6 col-md-4">
+                                    <div class="info-label">Recorded at</div>
+                                    <div class="info-value">{{ $pur->purchase_at->format('d M Y, h:i A') }}</div>
+                                </div>
+                                @endif
+                            </div>
+                        </div>
+                    </div>
+                @endif
+
                 <h6 class="mb-3">Order Items</h6>
                 <div class="table-responsive">
                     <table class="table table-sm table-bordered align-middle">
@@ -124,6 +171,12 @@
                         <td class="text-muted">Discount</td>
                         <td class="text-end text-danger">-{{ number_format($order->discount_amount) }} Ks</td>
                     </tr>
+                    @if($order->tradeIn)
+                    <tr>
+                        <td class="text-muted">Trade-In credit</td>
+                        <td class="text-end text-success">-{{ number_format($order->tradeIn->trade_in_credit) }} Ks</td>
+                    </tr>
+                    @endif
                     <tr>
                         <td class="text-muted">Tax</td>
                         <td class="text-end">{{ number_format($order->tax_amount) }} Ks</td>

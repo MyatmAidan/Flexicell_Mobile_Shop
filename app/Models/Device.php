@@ -3,16 +3,35 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasOneThrough;
 
 class Device extends Model
 {
     protected $guarded = ['id'];
-    
+
     protected $casts = [
         'image' => 'array',
     ];
 
     protected $dates = ['purchase_at'];
+
+    public function productVariant(): BelongsTo
+    {
+        return $this->belongsTo(ProductVariant::class, 'product_variant_id');
+    }
+
+    public function product(): HasOneThrough
+    {
+        return $this->hasOneThrough(
+            Product::class,
+            ProductVariant::class,
+            'id',
+            'id',
+            'product_variant_id',
+            'product_id'
+        );
+    }
 
     public function warranty()
     {
@@ -22,26 +41,6 @@ class Device extends Model
     public function order()
     {
         return $this->belongsTo(Order::class);
-    }
-
-    public function product()
-    {
-        return $this->belongsTo(Product::class);
-    }
-
-    public function ramOption()
-    {
-        return $this->belongsTo(\App\Models\RamOption::class, 'ram_option_id');
-    }
-
-    public function storageOption()
-    {
-        return $this->belongsTo(\App\Models\StorageOption::class, 'storage_option_id');
-    }
-
-    public function colorOption()
-    {
-        return $this->belongsTo(\App\Models\ColorOption::class, 'color_option_id');
     }
 
     public function warrantyDetails()

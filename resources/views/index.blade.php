@@ -142,6 +142,84 @@
             display: inline-block;
         }
         .home-blog-read:hover { background: #b8001f; color: #fff; }
+
+        .scroll-card-item {
+            animation: fadeInUp .45s ease both;
+        }
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(24px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Skeleton loader */
+        .skeleton-card {
+            background: #fff;
+            border-radius: 12px;
+            overflow: hidden;
+            border: 1px solid #eee;
+            margin-bottom: 30px;
+        }
+        .skeleton-img {
+            height: 250px;
+            background: linear-gradient(90deg, #f0f0f0 25%, #e8e8e8 50%, #f0f0f0 75%);
+            background-size: 200% 100%;
+            animation: shimmer 1.4s infinite;
+        }
+        .skeleton-body { padding: 20px; }
+        .skeleton-line {
+            height: 14px;
+            border-radius: 4px;
+            background: linear-gradient(90deg, #f0f0f0 25%, #e8e8e8 50%, #f0f0f0 75%);
+            background-size: 200% 100%;
+            animation: shimmer 1.4s infinite;
+            margin-bottom: 10px;
+        }
+        .skeleton-line.w50 { width: 50%; }
+        .skeleton-line.w70 { width: 70%; }
+        .skeleton-line.w40 { width: 40%; height: 20px; }
+        .skeleton-line.w100 { width: 100%; height: 38px; border-radius: 6px; margin-top: 8px; }
+        @keyframes shimmer {
+            0%   { background-position: 200% 0; }
+            100% { background-position: -200% 0; }
+        }
+
+        /* Load more button */
+        .load-more-btn {
+            display: inline-block;
+            padding: 10px 36px;
+            border: 2px solid #D10024;
+            background: transparent;
+            color: #D10024;
+            font-weight: 600;
+            font-size: 14px;
+            border-radius: 30px;
+            cursor: pointer;
+            transition: all .25s ease;
+            letter-spacing: .5px;
+        }
+        .load-more-btn:hover {
+            background: #D10024;
+            color: #fff;
+        }
+        .load-more-btn:disabled {
+            opacity: .5;
+            cursor: not-allowed;
+        }
+        .load-more-btn .spinner-border {
+            width: 16px;
+            height: 16px;
+            border-width: 2px;
+            margin-right: 6px;
+            vertical-align: middle;
+        }
+
+        /* Counter badge */
+        .scroll-counter {
+            font-size: 13px;
+            color: #888;
+            margin-bottom: 8px;
+        }
+        .scroll-counter strong { color: #D10024; }
     </style>
 @endsection
 @section('content')
@@ -174,74 +252,29 @@
     </div>
     <!-- /SECTION -->
 
-    <!-- NEW ARRIVALS SECTION -->
+    <!-- NEW ARRIVALS SECTION (scroll pagination) -->
     <div class="section">
         <div class="container">
             <div class="row">
                 <div class="col-md-12">
-                    <div class="section-title">
-                        <h3 class="title">New Arrivals</h3>
+                    <div class="section-title d-flex flex-wrap justify-content-between align-items-end">
+                        <h3 class="title mb-0">New Arrivals</h3>
+                        <div class="scroll-counter" id="newArrivalsCounter"></div>
                     </div>
                 </div>
-
                 <div class="col-md-12">
-                    <div class="row">
-                        @foreach ($new_products as $product)
-                            @php
-                                $phoneModel = $product->phoneModel;
-                                $brand = $phoneModel?->brand;
-                                $images = is_array($product->image) ? $product->image : (array) json_decode($product->image, true);
-                                $firstImage = $images[0] ?? null;
-                                $availableColors = $phoneModel->available_color ?? [];
-                                $isSoldOut = ($product->product_type === 'new' && $product->stock_quantity <= 0) ||
-                                             ($product->product_type !== 'new' && $product->devices()->where('status', 'available')->count() <= 0);
-                            @endphp
-
-                            <div class="col-md-3 col-sm-6 col-xs-12">
-                                <div class="product-card">
-                                    <div class="product-img-container">
-                                        @if ($isSoldOut)
-                                            <div class="sold-out-overlay">Sold Out</div>
-                                        @endif
-
-                                        @if ($brand && $brand->logo)
-                                            <img src="{{ $brand->logoUrl() }}" alt="" class="brand-logo-small">
-                                        @endif
-
-                                        @if ($firstImage)
-                                            <img src="{{ asset('storage/products/' . $firstImage) }}" alt="{{ $phoneModel?->model_name }}">
-                                        @else
-                                            <div class="text-muted">No Image</div>
-                                        @endif
-                                    </div>
-
-                                    <div class="product-info">
-                                        <p class="product-category-text">{{ $phoneModel?->category?->category_name ?? 'Gadget' }}</p>
-                                        <h3 class="product-name-text">
-                                            <a href="{{ route('products.show', $product->id) }}">
-                                                {{ $phoneModel?->model_name }}
-                                            </a>
-                                        </h3>
-
-                                        <div class="color-swatches">
-                                            @foreach($availableColors as $color)
-                                                <span class="color-swatch-dot" style="background-color: {{ $color['value'] }}" title="{{ $color['name'] }}"></span>
-                                            @endforeach
-                                        </div>
-
-                                        <div class="product-price-text">
-                                            {{ number_format($product->selling_price) }} Ks
-                                        </div>
-
-                                        <div class="product-btns">
-                                            <a href="{{ route('products.show', $product->id) }}" class="btn btn-block" style="background: #1e1f29; color: #fff; border-radius: 6px;">
-                                                View Details
-                                            </a>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        @endforeach
+                    <div class="row" id="newArrivalsGrid"></div>
+                    <div class="row" id="newArrivalsSkeleton">
+                        <div class="col-md-3 col-sm-6 col-xs-12"><div class="skeleton-card"><div class="skeleton-img"></div><div class="skeleton-body"><div class="skeleton-line w50"></div><div class="skeleton-line w70"></div><div class="skeleton-line w40"></div><div class="skeleton-line w100"></div></div></div></div>
+                        <div class="col-md-3 col-sm-6 col-xs-12"><div class="skeleton-card"><div class="skeleton-img"></div><div class="skeleton-body"><div class="skeleton-line w50"></div><div class="skeleton-line w70"></div><div class="skeleton-line w40"></div><div class="skeleton-line w100"></div></div></div></div>
+                        <div class="col-md-3 col-sm-6 col-xs-12"><div class="skeleton-card"><div class="skeleton-img"></div><div class="skeleton-body"><div class="skeleton-line w50"></div><div class="skeleton-line w70"></div><div class="skeleton-line w40"></div><div class="skeleton-line w100"></div></div></div></div>
+                        <div class="col-md-3 col-sm-6 col-xs-12"><div class="skeleton-card"><div class="skeleton-img"></div><div class="skeleton-body"><div class="skeleton-line w50"></div><div class="skeleton-line w70"></div><div class="skeleton-line w40"></div><div class="skeleton-line w100"></div></div></div></div>
+                    </div>
+                    <div class="text-center" style="margin-top:15px;" id="newArrivalsActions">
+                        <button class="load-more-btn" id="newArrivalsLoadMore" style="display:none;">Load More</button>
+                    </div>
+                    <div class="text-center py-2" id="newArrivalsEnd" style="display:none;">
+                        <span class="text-muted" style="font-size:13px;">— All products loaded —</span>
                     </div>
                 </div>
             </div>
@@ -294,242 +327,96 @@
     </div>
     <!-- /HOT DEAL SECTION -->
 
-    <!-- BLOG SECTION -->
-    @if(isset($blogs) && $blogs->isNotEmpty())
-    <div class="section">
+    <!-- BLOG SECTION (scroll pagination) -->
+    <div class="section" id="blogSection">
         <div class="container">
             <div class="row">
                 <div class="col-md-12">
                     <div class="section-title d-flex flex-wrap justify-content-between align-items-end gap-2">
-                        <h3 class="title mb-0">Latest from the blog</h3>
-                        <a href="{{ route('blogs.index') }}" class="btn btn-sm btn-outline-dark" style="border-radius: 4px;">
-                            View all <i class="fa fa-arrow-right ms-1"></i>
-                        </a>
+                        <h3 class="title mb-0">Latest from the Blog</h3>
+                        <div class="d-flex align-items-center gap-3">
+                            <div class="scroll-counter" id="blogCounter"></div>
+                            <a href="{{ route('blogs.index') }}" class="btn btn-sm btn-outline-dark" style="border-radius: 4px;">
+                                View all <i class="fa fa-arrow-right ms-1"></i>
+                            </a>
+                        </div>
                     </div>
                 </div>
             </div>
-            <div class="row">
-                @foreach ($blogs as $blog)
-                    <div class="col-md-4 col-sm-6 mb-4">
-                        <div class="home-blog-card">
-                            @if ($blog->thumbnail)
-                                <img src="{{ asset('storage/blogs/' . $blog->thumbnail) }}"
-                                    alt="{{ $blog->title }}" class="home-blog-card-img">
-                            @else
-                                <div class="home-blog-card-img d-flex align-items-center justify-content-center bg-light">
-                                    <i class="fa fa-newspaper-o fa-3x text-muted"></i>
-                                </div>
-                            @endif
-                            <div class="home-blog-card-body">
-                                <div class="home-blog-card-meta">
-                                    <i class="fa fa-calendar-o"></i>
-                                    {{ $blog->created_at->format('M d, Y') }}
-                                    &nbsp;&middot;&nbsp;
-                                    {{ $blog->contents_count }} {{ $blog->contents_count === 1 ? 'section' : 'sections' }}
-                                </div>
-                                <div class="home-blog-card-title">{{ $blog->title }}</div>
-                                <a href="{{ route('blogs.show', $blog) }}" class="home-blog-read">
-                                    Read more <i class="fa fa-arrow-right"></i>
-                                </a>
-                            </div>
-                        </div>
-                    </div>
-                @endforeach
+            <div class="row" id="blogGrid"></div>
+            <div class="row" id="blogSkeleton">
+                <div class="col-md-4 col-sm-6 mb-4"><div class="skeleton-card"><div class="skeleton-img" style="height:180px"></div><div class="skeleton-body"><div class="skeleton-line w50"></div><div class="skeleton-line w70"></div><div class="skeleton-line w40"></div></div></div></div>
+                <div class="col-md-4 col-sm-6 mb-4"><div class="skeleton-card"><div class="skeleton-img" style="height:180px"></div><div class="skeleton-body"><div class="skeleton-line w50"></div><div class="skeleton-line w70"></div><div class="skeleton-line w40"></div></div></div></div>
+                <div class="col-md-4 col-sm-6 mb-4"><div class="skeleton-card"><div class="skeleton-img" style="height:180px"></div><div class="skeleton-body"><div class="skeleton-line w50"></div><div class="skeleton-line w70"></div><div class="skeleton-line w40"></div></div></div></div>
+            </div>
+            <div class="text-center" style="margin-top:15px;">
+                <button class="load-more-btn" id="blogLoadMore" style="display:none;">Load More</button>
+            </div>
+            <div class="text-center py-2" id="blogEnd" style="display:none;">
+                <span class="text-muted" style="font-size:13px;">— All posts loaded —</span>
             </div>
         </div>
     </div>
-    @endif
     <!-- /BLOG SECTION -->
 
-    <!-- POPULAR PRODUCTS SECTION -->
+    <!-- POPULAR PRODUCTS SECTION (scroll pagination) -->
     <div class="section">
         <div class="container">
             <div class="row">
                 <div class="col-md-12">
-                    <div class="section-title">
-                        <h3 class="title">Popular Products</h3>
+                    <div class="section-title d-flex flex-wrap justify-content-between align-items-end">
+                        <h3 class="title mb-0">Popular Products</h3>
+                        <div class="scroll-counter" id="popularCounter"></div>
                     </div>
                 </div>
-
                 <div class="col-md-12">
-                    <div class="row">
-                        @foreach ($popular_products as $product)
-                            @php
-                                $phoneModel = $product->phoneModel;
-                                $brand = $phoneModel?->brand;
-                                $images = is_array($product->image) ? $product->image : (array) json_decode($product->image, true);
-                                $firstImage = $images[0] ?? null;
-                                $availableColors = $phoneModel->available_color ?? [];
-                                $isSoldOut = ($product->product_type === 'new' && $product->stock_quantity <= 0) ||
-                                             ($product->product_type !== 'new' && $product->devices()->where('status', 'available')->count() <= 0);
-                            @endphp
-
-                            <div class="col-md-3 col-sm-6 col-xs-12">
-                                <div class="product-card">
-                                    <div class="product-img-container">
-                                        @if ($isSoldOut)
-                                            <div class="sold-out-overlay">Sold Out</div>
-                                        @endif
-
-                                        @if ($brand && $brand->logo)
-                                            <img src="{{ $brand->logoUrl() }}" alt="" class="brand-logo-small">
-                                        @endif
-
-                                        @if ($firstImage)
-                                            <img src="{{ asset('storage/products/' . $firstImage) }}" alt="{{ $phoneModel?->model_name }}">
-                                        @else
-                                            <div class="text-muted">No Image</div>
-                                        @endif
-                                    </div>
-
-                                    <div class="product-info">
-                                        <p class="product-category-text">{{ $phoneModel?->category?->category_name ?? 'Gadget' }}</p>
-                                        <h3 class="product-name-text">
-                                            <a href="{{ route('products.show', $product->id) }}">
-                                                {{ $phoneModel?->model_name }}
-                                            </a>
-                                        </h3>
-
-                                        <div class="color-swatches">
-                                            @foreach($availableColors as $color)
-                                                <span class="color-swatch-dot" style="background-color: {{ $color['value'] }}" title="{{ $color['name'] }}"></span>
-                                            @endforeach
-                                        </div>
-
-                                        <div class="product-price-text">
-                                            {{ number_format($product->selling_price) }} Ks
-                                        </div>
-
-                                        <div class="product-btns">
-                                            <a href="{{ route('products.show', $product->id) }}" class="btn btn-block" style="background: #1e1f29; color: #fff; border-radius: 6px;">
-                                                View Details
-                                            </a>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        @endforeach
+                    <div class="row" id="popularGrid"></div>
+                    <div class="row" id="popularSkeleton">
+                        <div class="col-md-3 col-sm-6 col-xs-12"><div class="skeleton-card"><div class="skeleton-img"></div><div class="skeleton-body"><div class="skeleton-line w50"></div><div class="skeleton-line w70"></div><div class="skeleton-line w40"></div><div class="skeleton-line w100"></div></div></div></div>
+                        <div class="col-md-3 col-sm-6 col-xs-12"><div class="skeleton-card"><div class="skeleton-img"></div><div class="skeleton-body"><div class="skeleton-line w50"></div><div class="skeleton-line w70"></div><div class="skeleton-line w40"></div><div class="skeleton-line w100"></div></div></div></div>
+                        <div class="col-md-3 col-sm-6 col-xs-12"><div class="skeleton-card"><div class="skeleton-img"></div><div class="skeleton-body"><div class="skeleton-line w50"></div><div class="skeleton-line w70"></div><div class="skeleton-line w40"></div><div class="skeleton-line w100"></div></div></div></div>
+                        <div class="col-md-3 col-sm-6 col-xs-12"><div class="skeleton-card"><div class="skeleton-img"></div><div class="skeleton-body"><div class="skeleton-line w50"></div><div class="skeleton-line w70"></div><div class="skeleton-line w40"></div><div class="skeleton-line w100"></div></div></div></div>
+                    </div>
+                    <div class="text-center" style="margin-top:15px;" id="popularActions">
+                        <button class="load-more-btn" id="popularLoadMore" style="display:none;">Load More</button>
+                    </div>
+                    <div class="text-center py-2" id="popularEnd" style="display:none;">
+                        <span class="text-muted" style="font-size:13px;">— All products loaded —</span>
                     </div>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- BEST SELLERS SECTION -->
+    <!-- BEST SELLERS SECTION (scroll pagination) -->
     <div class="section">
         <div class="container">
             <div class="row">
                 <div class="col-md-12">
-                    <div class="section-title">
-                        <h3 class="title">Best Sellers</h3>
+                    <div class="section-title d-flex flex-wrap justify-content-between align-items-end">
+                        <h3 class="title mb-0">Best Sellers</h3>
+                        <div class="scroll-counter" id="bestSellersCounter"></div>
+                    </div>
+                </div>
+                <div class="col-md-12">
+                    <div class="row" id="bestSellersGrid"></div>
+                    <div class="row" id="bestSellersSkeleton">
+                        <div class="col-md-3 col-sm-6 col-xs-12"><div class="skeleton-card"><div class="skeleton-img"></div><div class="skeleton-body"><div class="skeleton-line w50"></div><div class="skeleton-line w70"></div><div class="skeleton-line w40"></div><div class="skeleton-line w100"></div></div></div></div>
+                        <div class="col-md-3 col-sm-6 col-xs-12"><div class="skeleton-card"><div class="skeleton-img"></div><div class="skeleton-body"><div class="skeleton-line w50"></div><div class="skeleton-line w70"></div><div class="skeleton-line w40"></div><div class="skeleton-line w100"></div></div></div></div>
+                        <div class="col-md-3 col-sm-6 col-xs-12"><div class="skeleton-card"><div class="skeleton-img"></div><div class="skeleton-body"><div class="skeleton-line w50"></div><div class="skeleton-line w70"></div><div class="skeleton-line w40"></div><div class="skeleton-line w100"></div></div></div></div>
+                        <div class="col-md-3 col-sm-6 col-xs-12"><div class="skeleton-card"><div class="skeleton-img"></div><div class="skeleton-body"><div class="skeleton-line w50"></div><div class="skeleton-line w70"></div><div class="skeleton-line w40"></div><div class="skeleton-line w100"></div></div></div></div>
+                    </div>
+                    <div class="text-center" style="margin-top:15px;">
+                        <button class="load-more-btn" id="bestSellersLoadMore" style="display:none;">Load More</button>
+                    </div>
+                    <div class="text-center py-2" id="bestSellersEnd" style="display:none;">
+                        <span class="text-muted" style="font-size:13px;">— All products loaded —</span>
                     </div>
                 </div>
             </div>
-            <div class="row">
-                <div class="col-md-4 col-xs-6">
-                    <div class="section-title">
-                        <h4 class="title">New Arrivals</h4>
-                        <div class="section-nav">
-                            <div id="slick-nav-5" class="products-slick-nav"></div>
-                        </div>
-                    </div>
-
-                    <div class="products-widget-slick" data-nav="#slick-nav-5">
-                        @foreach ($new_products->chunk(3) as $productChunk)
-                            <div>
-                                @foreach ($productChunk as $product)
-                                    <!-- product widget -->
-                                    <div class="product-widget" data-id="{{ $product->id }}">
-                                        <div class="product-img">
-                                            <img src="{{ $product->imageUrl() }}" alt="">
-                                        </div>
-                                        <div class="product-body">
-                                            <p class="product-category">{{ $product->phoneModel->category->category_name ?? 'N/A' }}</p>
-                                            <h3 class="product-name"><a href="{{ route('products.show', $product->id) }}">{{ $product->phoneModel->model_name ?? 'N/A' }}</a></h3>
-                                            <h4 class="product-price">
-                                                {{ number_format($product->selling_price) }} MMK
-                                            </h4>
-                                        </div>
-                                    </div>
-                                    <!-- /product widget -->
-                                @endforeach
-                            </div>
-                        @endforeach
-                    </div>
-                </div>
-
-                <div class="col-md-4 col-xs-6">
-                    <div class="section-title">
-                        <h4 class="title">Popular Products</h4>
-                        <div class="section-nav">
-                            <div id="slick-nav-6" class="products-slick-nav"></div>
-                        </div>
-                    </div>
-
-                    <div class="products-widget-slick" data-nav="#slick-nav-6">
-                        @foreach ($popular_products->chunk(3) as $productChunk)
-                            <div>
-                                @foreach ($productChunk as $product)
-                                    <!-- product widget -->
-                                    <div class="product-widget" data-id="{{ $product->id }}">
-                                        <div class="product-img">
-                                            <img src="{{ $product->imageUrl() }}" alt="">
-                                        </div>
-                                        <div class="product-body">
-                                            <p class="product-category">{{ $product->phoneModel->category->category_name ?? 'N/A' }}</p>
-                                            <h3 class="product-name"><a href="{{ route('products.show', $product->id) }}">{{ $product->phoneModel->model_name ?? 'N/A' }}</a></h3>
-                                            <h4 class="product-price">
-                                                {{ number_format($product->selling_price) }} MMK
-                                            </h4>
-                                        </div>
-                                    </div>
-                                    <!-- /product widget -->
-                                @endforeach
-                            </div>
-                        @endforeach
-                    </div>
-                </div>
-
-                <div class="clearfix visible-sm visible-xs"></div>
-
-                <div class="col-md-4 col-xs-6">
-                    <div class="section-title">
-                        <h4 class="title">Best Sellers</h4>
-                        <div class="section-nav">
-                            <div id="slick-nav-7" class="products-slick-nav"></div>
-                        </div>
-                    </div>
-
-                    <div class="products-widget-slick" data-nav="#slick-nav-7">
-                        @foreach ($best_sellers->chunk(3) as $productChunk)
-                            <div>
-                                @foreach ($productChunk as $product)
-                                    <!-- product widget -->
-                                    <div class="product-widget" data-id="{{ $product->id }}">
-                                        <div class="product-img">
-                                            <img src="{{ $product->imageUrl() }}" alt="">
-                                        </div>
-                                        <div class="product-body">
-                                            <p class="product-category">{{ $product->phoneModel->category->category_name ?? 'N/A' }}</p>
-                                            <h3 class="product-name"><a href="{{ route('products.show', $product->id) }}">{{ $product->phoneModel->model_name ?? 'N/A' }}</a></h3>
-                                            <h4 class="product-price">
-                                                {{ number_format($product->selling_price) }} MMK
-                                            </h4>
-                                        </div>
-                                    </div>
-                                    <!-- /product widget -->
-                                @endforeach
-                            </div>
-                        @endforeach
-                    </div>
-                </div>
-
-            </div>
-            <!-- /row -->
         </div>
-        <!-- /container -->
     </div>
-    <!-- /SECTION -->
+    <!-- /BEST SELLERS -->
 
     <!-- NEWSLETTER -->
     <div id="newsletter" class="section">
@@ -570,10 +457,160 @@
 @section('script')
     <script>
         $(document).ready(function() {
-            $('.product-widget').on('click', function() {
-                const productId = $(this).data('id');
-                const route = "{{ route('products.show', ':id') }}".replace(':id', productId);
-                window.location.href = route;
+
+            /* ── Product card builder ── */
+            function buildProductCard(p, idx) {
+                var img = p.image
+                    ? '<img src="'+p.image+'" alt="'+p.model_name+'">'
+                    : '<div class="text-muted">No Image</div>';
+                var badge = p.is_sold_out ? '<div class="sold-out-overlay">Sold Out</div>' : '';
+                var logo  = p.brand_logo
+                    ? '<img src="'+p.brand_logo+'" alt="" class="brand-logo-small">'
+                    : '';
+
+                return '<div class="col-md-3 col-sm-6 col-xs-12 scroll-card-item" style="animation-delay:'+(idx * 0.08)+'s">' +
+                    '<div class="product-card">' +
+                        '<div class="product-img-container">' + badge + logo + img + '</div>' +
+                        '<div class="product-info">' +
+                            '<p class="product-category-text">'+p.category_name+'</p>' +
+                            '<h3 class="product-name-text"><a href="'+p.url+'">'+p.model_name+'</a></h3>' +
+                            '<div class="product-price-text">'+Number(p.selling_price).toLocaleString()+' Ks</div>' +
+                            '<div class="product-btns">' +
+                                '<a href="'+p.url+'" class="btn btn-block" style="background:#1e1f29;color:#fff;border-radius:6px;">View Details</a>' +
+                            '</div>' +
+                        '</div>' +
+                    '</div>' +
+                '</div>';
+            }
+
+            /* ── Blog card builder ── */
+            function buildBlogCard(b, idx) {
+                var thumb = b.thumbnail
+                    ? '<img src="'+b.thumbnail+'" alt="'+b.title+'" class="home-blog-card-img">'
+                    : '<div class="home-blog-card-img d-flex align-items-center justify-content-center bg-light"><i class="fa fa-newspaper-o fa-3x text-muted"></i></div>';
+
+                return '<div class="col-md-4 col-sm-6 mb-4 scroll-card-item" style="animation-delay:'+(idx * 0.1)+'s">' +
+                    '<div class="home-blog-card">' +
+                        thumb +
+                        '<div class="home-blog-card-body">' +
+                            '<div class="home-blog-card-meta">' +
+                                '<i class="fa fa-calendar-o"></i> '+b.date+' &middot; '+b.sections_count+' '+b.sections_label +
+                            '</div>' +
+                            '<div class="home-blog-card-title">'+b.title+'</div>' +
+                            '<a href="'+b.url+'" class="home-blog-read">Read more <i class="fa fa-arrow-right"></i></a>' +
+                        '</div>' +
+                    '</div>' +
+                '</div>';
+            }
+
+            /* ── Generic scroller factory ── */
+            function createScroller(opts) {
+                var page      = 0;
+                var loaded    = 0;
+                var total     = 0;
+                var loading   = false;
+                var finished  = false;
+
+                var $grid    = $('#' + opts.gridId);
+                var $skel    = $('#' + opts.skeletonId);
+                var $end     = $('#' + opts.endId);
+                var $btn     = $('#' + opts.btnId);
+                var $counter = opts.counterId ? $('#' + opts.counterId) : null;
+                var label    = opts.label || 'products';
+
+                function updateCounter() {
+                    if ($counter && total > 0) {
+                        $counter.html('Showing <strong>' + loaded + '</strong> of <strong>' + total + '</strong> ' + label);
+                    }
+                }
+
+                function loadMore() {
+                    if (loading || finished) return;
+                    loading = true;
+                    page++;
+
+                    $skel.show();
+                    $btn.prop('disabled', true).html(
+                        '<span class="spinner-border spinner-border-sm text-danger"></span> Loading...'
+                    );
+
+                    $.get(opts.apiUrl, $.extend({ page: page }, opts.params || {}), function(res) {
+                        $skel.hide();
+                        if (res.total !== undefined) total = res.total;
+
+                        if (res.data && res.data.length) {
+                            var html = '';
+                            res.data.forEach(function(item, i) {
+                                html += opts.cardBuilder(item, i);
+                            });
+                            $grid.append(html);
+                            loaded += res.data.length;
+                        }
+
+                        updateCounter();
+
+                        if (!res.has_more) {
+                            finished = true;
+                            $btn.hide();
+                            if (loaded > 0) $end.show();
+                        } else {
+                            $btn.show().prop('disabled', false).text('Load More');
+                        }
+                        loading = false;
+                    }).fail(function() {
+                        loading = false;
+                        $skel.hide();
+                        $btn.show().prop('disabled', false).text('Retry');
+                    });
+                }
+
+                $btn.on('click', function() { loadMore(); });
+
+                loadMore();
+
+                $(window).on('scroll', function() {
+                    if (finished || loading) return;
+                    var btnTop = $btn.offset() ? $btn.offset().top : 0;
+                    if (btnTop && $(window).scrollTop() + $(window).height() >= btnTop - 150) {
+                        loadMore();
+                    }
+                });
+            }
+
+            /* ── Initialise all scrollers ── */
+            var productApiUrl = "{{ route('api.products.scroll') }}";
+            var blogApiUrl    = "{{ route('api.blogs.scroll') }}";
+
+            createScroller({
+                gridId: 'newArrivalsGrid', skeletonId: 'newArrivalsSkeleton',
+                endId: 'newArrivalsEnd', btnId: 'newArrivalsLoadMore',
+                counterId: 'newArrivalsCounter', label: 'products',
+                apiUrl: productApiUrl, params: { type: 'new' },
+                cardBuilder: buildProductCard
+            });
+
+            createScroller({
+                gridId: 'blogGrid', skeletonId: 'blogSkeleton',
+                endId: 'blogEnd', btnId: 'blogLoadMore',
+                counterId: 'blogCounter', label: 'posts',
+                apiUrl: blogApiUrl, params: {},
+                cardBuilder: buildBlogCard
+            });
+
+            createScroller({
+                gridId: 'popularGrid', skeletonId: 'popularSkeleton',
+                endId: 'popularEnd', btnId: 'popularLoadMore',
+                counterId: 'popularCounter', label: 'products',
+                apiUrl: productApiUrl, params: { type: 'popular' },
+                cardBuilder: buildProductCard
+            });
+
+            createScroller({
+                gridId: 'bestSellersGrid', skeletonId: 'bestSellersSkeleton',
+                endId: 'bestSellersEnd', btnId: 'bestSellersLoadMore',
+                counterId: 'bestSellersCounter', label: 'products',
+                apiUrl: productApiUrl, params: { type: 'bestseller' },
+                cardBuilder: buildProductCard
             });
         });
     </script>

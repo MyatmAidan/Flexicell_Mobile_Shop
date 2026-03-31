@@ -27,7 +27,7 @@ class DeviceController extends Controller
     public function getList()
     {
         $this->requirePermission('devices.view');
-        $devices = Device::with('product.phoneModel.brand');
+        $devices = Device::with('productVariant.product.phoneModel.brand');
 
         return DataTables::of($devices)
             ->addColumn('plus-icon', function () {
@@ -36,7 +36,7 @@ class DeviceController extends Controller
             ->addIndexColumn()
             ->addColumn('product_name', function ($device) {
                 $product = $device->product;
-                if (!$product || !$product->phoneModel) {
+                if (! $product || ! $product->phoneModel) {
                     return '-';
                 }
                 return $product->phoneModel->model_name . ' (' . $product->product_type . ')';
@@ -45,10 +45,10 @@ class DeviceController extends Controller
                 return $device->product?->phoneModel?->brand?->brand_name ?? '-';
             })
             ->addColumn('ram', function ($device) {
-                return $device->ramOption?->value ?? '-';
+                return $device->productVariant?->ramOption?->value ?? '-';
             })
             ->addColumn('storage', function ($device) {
-                return $device->storageOption?->value ?? '-';
+                return $device->productVariant?->storageOption?->value ?? '-';
             })
             ->editColumn('purchase_price', function ($device) {
                 return $device->purchase_price ? number_format($device->purchase_price, 2) : '-';
@@ -57,8 +57,8 @@ class DeviceController extends Controller
                 return $device->selling_price ? number_format($device->selling_price, 2) : '-';
             })
             ->editColumn('color', function ($device) {
-                 $color = $device->colorOption?->value ?? '#000000';
-                 $name = $device->colorOption?->name ?? $color;
+                 $color = $device->productVariant?->colorOption?->value ?? '#000000';
+                 $name = $device->productVariant?->colorOption?->name ?? $color;
                  if (preg_match('/^#[a-f0-9]{6}$/i', $color) || preg_match('/^#[a-f0-9]{3}$/i', $color)) {
                       return '<div class="mx-auto" style="display:inline-block; width: 20px; height: 20px; background-color: ' . htmlspecialchars($color, ENT_QUOTES) . '; border-radius: 50%; border: 1px solid #ddd;" title="' . htmlspecialchars($name, ENT_QUOTES) . '"></div>';
                  }
@@ -77,7 +77,7 @@ class DeviceController extends Controller
     public function getData($id)
     {
         $this->requirePermission('devices.view');
-        $device = Device::with('product.phoneModel.brand')->findOrFail($id);
+        $device = Device::with('productVariant.product.phoneModel.brand')->findOrFail($id);
         $products = Product::with('phoneModel.brand')->get()->map(function ($p) {
             return [
                 'id' => $p->id,
@@ -88,11 +88,12 @@ class DeviceController extends Controller
         return response()->json([
             'device' => [
                 'id' => $device->id,
-                'product_id' => $device->product_id,
+                'product_id' => $device->productVariant?->product_id,
+                'product_variant_id' => $device->product_variant_id,
                 'imei' => $device->imei,
-                'ram_option_id' => $device->ram_option_id,
-                'storage_option_id' => $device->storage_option_id,
-                'color_option_id' => $device->color_option_id,
+                'ram_option_id' => $device->productVariant?->ram_option_id,
+                'storage_option_id' => $device->productVariant?->storage_option_id,
+                'color_option_id' => $device->productVariant?->color_option_id,
                 'warranty_id' => $device->warranty_id,
                 'battery_percentage' => $device->battery_percentage,
                 'condition_grade' => $device->condition_grade,
@@ -144,12 +145,16 @@ class DeviceController extends Controller
                 $colorOptionId = VariantStock::getOrCreateColorOption($request->new_color_name, $request->new_color_value);
             }
 
+            $variantId = VariantStock::findOrCreateVariantId(
+                (int) $request->product_id,
+                $request->ram_option_id ? (int) $request->ram_option_id : null,
+                $request->storage_option_id ? (int) $request->storage_option_id : null,
+                $colorOptionId
+            );
+
             $device = Device::create([
-                'product_id' => $request->product_id,
+                'product_variant_id' => $variantId,
                 'imei' => $request->imei,
-                'ram_option_id' => $request->ram_option_id,
-                'storage_option_id' => $request->storage_option_id,
-                'color_option_id' => $colorOptionId,
                 'warranty_id' => $request->warranty_id ?: null,
                 'battery_percentage' => $request->battery_percentage,
                 'condition_grade' => $request->condition_grade,
@@ -174,7 +179,7 @@ class DeviceController extends Controller
     public function edit($id)
     {
         $this->requirePermission('devices.update');
-        $device = Device::with('product.phoneModel')->findOrFail($id);
+        $device = Device::with('productVariant.product.phoneModel')->findOrFail($id);
         $products = Product::with('phoneModel.brand')->get();
         $ramOptions = DB::table('ram_options')->orderBy('value')->get();
         $storageOptions = DB::table('storage_options')->orderBy('value')->get();
@@ -222,12 +227,16 @@ class DeviceController extends Controller
                 $colorOptionId = VariantStock::getOrCreateColorOption($request->new_color_name, $request->new_color_value);
             }
 
+            $variantId = VariantStock::findOrCreateVariantId(
+                (int) $request->product_id,
+                $request->ram_option_id ? (int) $request->ram_option_id : null,
+                $request->storage_option_id ? (int) $request->storage_option_id : null,
+                $colorOptionId
+            );
+
             $device->update([
-                'product_id' => $request->product_id,
+                'product_variant_id' => $variantId,
                 'imei' => $request->imei,
-                'ram_option_id' => $request->ram_option_id,
-                'storage_option_id' => $request->storage_option_id,
-                'color_option_id' => $colorOptionId,
                 'warranty_id' => $request->warranty_id ?: null,
                 'battery_percentage' => $request->battery_percentage,
                 'condition_grade' => $request->condition_grade,

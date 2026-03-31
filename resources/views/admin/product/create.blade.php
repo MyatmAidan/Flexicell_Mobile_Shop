@@ -57,7 +57,7 @@
 
                     <div class="row">
                         {{-- SWITCH --}}
-                        <div class="col-md-6">
+                        <div class="col-md-4">
                             <div class="form-group mb-3">
                                 <label class="d-block">Product Type <span class="text-danger">*</span></label>
 
@@ -76,7 +76,7 @@
                         </div>
 
                         {{-- Phone Model --}}
-                        <div class="col-md-6">
+                        <div class="col-md-4">
                             <div class="form-group mb-3">
                                 <label>Phone Model <span class="text-danger">*</span></label>
                                 <select class="form-control" name="phone_model_id" required>
@@ -89,18 +89,17 @@
                                 </select>
                             </div>
                         </div>
-                    </div>
 
-                    <div class="row">
-                        <div class="col-md-6">
+                        <div class="col-md-4">
                             <div class="form-group mb-3">
-                                <label>Warranty</label>
-                                <select class="form-control" name="warranty_id">
+                                <label for="create_warranty_id">Warranty</label>
+                                <select class="form-control" id="create_warranty_id" name="warranty_id">
                                     <option value="">No Warranty</option>
                                     @foreach(($warranties ?? []) as $w)
                                         <option value="{{ $w->id }}">{{ $w->warranty_month }} Months ({{ ucfirst($w->status) }})</option>
                                     @endforeach
                                 </select>
+                                <small class="text-muted">Applied to new stock devices or the second-hand unit.</small>
                             </div>
                         </div>
                     </div>
@@ -329,8 +328,17 @@ $(function () {
             processData: false,
             contentType: false,
             success: function(res) {
-                Swal.fire('Success', res.message, 'success')
-                    .then(() => window.location.href = "{{ route('admin.product.index') }}");
+                Swal.fire({
+                    toast: true,
+                    position: 'top-end',
+                    icon: 'success',
+                    title: res.message || 'Created',
+                    showConfirmButton: false,
+                    timer: 2000,
+                    timerProgressBar: true,
+                }).then(() => {
+                    window.location.href = "{{ route('admin.product.index') }}";
+                });
             },
             error: function(xhr) {
                 let msg = 'Error';

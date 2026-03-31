@@ -170,8 +170,9 @@
                         position: 'top-end',
                         icon: 'success',
                         title: response.message,
+                        showConfirmButton: false,
                         timer: 2000,
-                        showConfirmButton: false
+                        timerProgressBar: true,
                     });
                     datatable.ajax.reload(null, false);
                 },

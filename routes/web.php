@@ -12,17 +12,18 @@ use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\DeviceController;
 use App\Http\Controllers\DirectSaleController;
 use App\Http\Controllers\InstallmentController;
-use App\Http\Controllers\OrderController;
 use App\Http\Controllers\InstallmentRateController;
+use App\Http\Controllers\OrderController;
 use App\Http\Controllers\PhoneModelController;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\UserPermissionController;
+use App\Http\Controllers\TradeInSaleController;
 use App\Http\Controllers\WarrantyCheckController;
 use App\Http\Controllers\WarrantyDetailController;
 use App\Models\Blog;
-use App\Models\Brand;
+use App\Models\Brands;
 use App\Models\Category;
 use App\Models\Product;
 use Illuminate\Http\Request;
@@ -31,20 +32,7 @@ use Illuminate\Support\Facades\Route;
 // Public storefront
 Route::get('/', function () {
     $categories = Category::all();
-
-    $baseQuery = Product::with('phoneModel.brand', 'phoneModel.category');
-
-    $new_products = (clone $baseQuery)->orderByDesc('created_at')->take(12)->get();
-    $popular_products = (clone $baseQuery)->orderByDesc('stock_quantity')->take(12)->get();
-    $best_sellers = Product::with('phoneModel.brand', 'phoneModel.category')
-        ->withCount('devices')
-        ->orderByDesc('devices_count')
-        ->take(12)
-        ->get();
-
-    $blogs = Blog::withCount('contents')->latest()->take(6)->get();
-
-    return view('index', compact('categories', 'new_products', 'popular_products', 'best_sellers', 'blogs'));
+    return view('index', compact('categories'));
 })->name('home');
 
 Route::get('/products', function () {
@@ -86,9 +74,14 @@ Route::get('/trade-in/estimate', function () {
 
 Route::get('/products/search', function (Request $request) {
     $categories = Category::all();
-    $brands = \App\Models\Brand::all();
+    $brands = Brands::all();
 
-    $query = Product::with('phoneModel.brand', 'phoneModel.category');
+    $query = Product::with('phoneModel.brand', 'phoneModel.category')
+        ->withCount([
+            'devices as available_device_count' => function ($q) {
+                $q->where('status', 'available')->whereNull('order_id');
+            },
+        ]);
 
     if ($request->filled('category_id')) {
         $categoryId = $request->input('category_id');
@@ -129,6 +122,81 @@ Route::get('/products/{product}', function (Product $product) {
 Route::post('/products/update-view', function (Request $request) {
     return response()->noContent();
 })->name('products.updateView');
+
+Route::get('/api/products/scroll', function (Request $request) {
+    $type   = $request->input('type', 'new');
+    $page   = max(1, (int) $request->input('page', 1));
+    $perPage = 4;
+
+    $query = Product::with('phoneModel.brand', 'phoneModel.category')
+        ->withCount(['devices as available_devices_count' => function ($q) {
+            $q->where('status', 'available');
+        }]);
+
+    if ($type === 'popular') {
+        $query->orderByDesc('available_devices_count');
+    } elseif ($type === 'bestseller') {
+        $query->withCount('devices')->orderByDesc('devices_count');
+    } else {
+        $query->orderByDesc('created_at');
+    }
+
+    $products = $query->paginate($perPage, ['*'], 'page', $page);
+
+    $data = $products->getCollection()->map(function ($p) {
+        $images = is_array($p->image) ? $p->image : (array) json_decode($p->image, true);
+        $firstImage = $images[0] ?? null;
+        $brand = $p->phoneModel?->brand;
+        $isSoldOut = (int) $p->available_devices_count <= 0;
+
+        return [
+            'id'            => $p->id,
+            'model_name'    => $p->phoneModel?->model_name ?? '-',
+            'category_name' => $p->phoneModel?->category?->category_name ?? 'Gadget',
+            'brand_name'    => $brand?->brand_name ?? '',
+            'brand_logo'    => $brand && $brand->logo ? $brand->logoUrl() : null,
+            'image'         => $firstImage ? asset('storage/products/' . $firstImage) : null,
+            'selling_price' => (float) $p->selling_price,
+            'is_sold_out'   => $isSoldOut,
+            'url'           => route('products.show', $p->id),
+        ];
+    });
+
+    return response()->json([
+        'data'         => $data,
+        'current_page' => $products->currentPage(),
+        'last_page'    => $products->lastPage(),
+        'has_more'     => $products->hasMorePages(),
+        'total'        => $products->total(),
+    ]);
+})->name('api.products.scroll');
+
+Route::get('/api/blogs/scroll', function (Request $request) {
+    $page    = max(1, (int) $request->input('page', 1));
+    $perPage = 3;
+
+    $blogs = Blog::withCount('contents')->latest()->paginate($perPage, ['*'], 'page', $page);
+
+    $data = $blogs->getCollection()->map(function ($b) {
+        return [
+            'id'             => $b->id,
+            'title'          => $b->title,
+            'thumbnail'      => $b->thumbnail ? asset('storage/blogs/' . $b->thumbnail) : null,
+            'date'           => $b->created_at->format('M d, Y'),
+            'sections_count' => $b->contents_count,
+            'sections_label' => $b->contents_count === 1 ? 'section' : 'sections',
+            'url'            => route('blogs.show', $b),
+        ];
+    });
+
+    return response()->json([
+        'data'         => $data,
+        'current_page' => $blogs->currentPage(),
+        'last_page'    => $blogs->lastPage(),
+        'has_more'     => $blogs->hasMorePages(),
+        'total'        => $blogs->total(),
+    ]);
+})->name('api.blogs.scroll');
 
 // Auth (guest-only)
 Route::middleware('guest')->group(function () {
@@ -268,6 +336,13 @@ Route::middleware(['authCheck', 'adminAuth'])->name('admin.')->group(function ()
             Route::get('/variants-stock', [DirectSaleController::class, 'checkVariantStock'])->name('direct_sale.variants_stock');
             Route::post('/checkout', [DirectSaleController::class, 'checkout'])->name('direct_sale.checkout');
             Route::get('/receipt/{order}', [DirectSaleController::class, 'receipt'])->name('direct_sale.receipt');
+        });
+
+        // ---- Trade-In Sale -----------------------------------------------
+        Route::middleware('permission:direct_sale.manage')->prefix('trade-in-sale')->group(function () {
+            Route::get('/', [TradeInSaleController::class, 'index'])->name('trade_in.index');
+            Route::post('/checkout', [TradeInSaleController::class, 'checkout'])->name('trade_in.checkout');
+            Route::get('/customers', [TradeInSaleController::class, 'searchCustomers'])->name('trade_in.customers');
         });
 
         // ---- Orders (all roles, view only for staff) --------------------

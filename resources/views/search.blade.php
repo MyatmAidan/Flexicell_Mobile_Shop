@@ -209,8 +209,7 @@
                                 $images = is_array($product->image) ? $product->image : (array) json_decode($product->image, true);
                                 $firstImage = $images[0] ?? null;
                                 $availableColors = $phoneModel->available_color ?? [];
-                                $isSoldOut = ($product->product_type === 'new' && $product->stock_quantity <= 0) || 
-                                             ($product->product_type !== 'new' && $product->devices()->where('status', 'available')->count() <= 0);
+                                $isSoldOut = (int) ($product->available_device_count ?? 0) <= 0;
                             @endphp
                             
                             <div class="col-md-4 col-sm-6 col-xs-12">

@@ -318,15 +318,15 @@
                             </tr>
                             <tr>
                                 <td>RAM</td>
-                                <td>{{ $device->ramOption?->name ?? '—' }}</td>
+                                <td>{{ $device->productVariant?->ramOption?->name ?? '—' }}</td>
                             </tr>
                             <tr>
                                 <td>Storage</td>
-                                <td>{{ $device->storageOption?->name ?? '—' }}</td>
+                                <td>{{ $device->productVariant?->storageOption?->name ?? '—' }}</td>
                             </tr>
                             <tr>
                                 <td>Color</td>
-                                <td>{{ $device->colorOption?->name ?? '—' }}</td>
+                                <td>{{ $device->productVariant?->colorOption?->name ?? '—' }}</td>
                             </tr>
                             <tr>
                                 <td>Condition</td>

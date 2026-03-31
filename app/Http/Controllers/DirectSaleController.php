@@ -54,7 +54,7 @@ class DirectSaleController extends Controller
                 ->count();
 
             $fallbackDevicePrice = Device::query()
-                ->where('product_id', $p->id)
+                ->whereHas('productVariant', fn ($q) => $q->where('product_id', $p->id))
                 ->where('status', 'available')
                 ->whereNull('order_id')
                 ->whereNotNull('selling_price')
@@ -72,7 +72,7 @@ class DirectSaleController extends Controller
                 'brand' => $p->phoneModel?->brand?->brand_name ?? '-',
                 'product_type' => $p->product_type,
                 'selling_price' => $effectivePrice,
-                'stock_quantity' => (int) $p->stock_quantity,
+                'stock_quantity' => (int) $availableDevices,
                 'available_devices' => (int) $availableDevices,
                 'image' => $firstImage,
             ];
@@ -108,7 +108,7 @@ class DirectSaleController extends Controller
         }
 
         $device = Device::query()
-            ->with(['product.phoneModel.brand'])
+            ->with(['productVariant.product.phoneModel.brand'])
             ->where('imei', $imei)
             ->first();
 
@@ -124,6 +124,7 @@ class DirectSaleController extends Controller
         }
 
         $product = $device->product;
+        $pv = $device->productVariant;
         $effectivePrice = (float) ($device->selling_price ?? 0);
         if ($effectivePrice <= 0) {
             $effectivePrice = (float) ($product?->selling_price ?? 0);
@@ -133,13 +134,14 @@ class DirectSaleController extends Controller
             'data' => [
                 'device_id' => $device->id,
                 'imei' => $device->imei,
-                'product_id' => $device->product_id,
+                'product_id' => $product?->id,
+                'product_variant_id' => $device->product_variant_id,
                 'product_label' => ($product?->phoneModel?->model_name ?? '-') . ' (' . ($product?->product_type ?? '-') . ')',
                 'brand' => $product?->phoneModel?->brand?->brand_name ?? '-',
                 'selling_price' => $effectivePrice,
-                'ram' => $device->ramOption?->value ?? '-',
-                'storage' => $device->storageOption?->value ?? '-',
-                'color' => $device->colorOption?->value ?? '-',
+                'ram' => $pv?->ramOption?->value ?? '-',
+                'storage' => $pv?->storageOption?->value ?? '-',
+                'color' => $pv?->colorOption?->value ?? '-',
             ],
         ]);
     }
@@ -147,40 +149,45 @@ class DirectSaleController extends Controller
     public function checkVariantStock(Request $request)
     {
         $this->requirePermission('direct_sale.manage');
-        $productId = $request->product_id;
-        $ram = $request->ram;
-        $storage = $request->storage;
-        $color = $request->color;
+        $productId = (int) $request->product_id;
+        $ram       = $request->ram;       // option ID
+        $storage   = $request->storage;   // option ID
+        $color     = $request->color;     // option ID
 
-        $query = Device::query()
-            ->where('product_id', $productId)
-            ->whereNull('order_id')
-            ->where('status', 'available')
-            ->when($ram, fn ($q) => $q->where('ram_option_id', $ram))
-            ->when($storage, fn ($q) => $q->where('storage_option_id', $storage))
-            ->when($color, fn ($q) => $q->where('color_option_id', $color));
+        $productVariantId = $request->input('product_variant_id');
 
-        $count = $query->count();
+        $query = DB::table('devices as d')
+            ->join('product_variants as pv', 'pv.id', '=', 'd.product_variant_id')
+            ->where('pv.product_id', $productId)
+            ->whereNull('d.order_id')
+            ->where('d.status', 'available')
+            ->when($productVariantId, fn ($q) => $q->where('d.product_variant_id', (int) $productVariantId))
+            ->when(! $productVariantId && $ram, fn ($q) => $q->where('pv.ram_option_id', $ram))
+            ->when(! $productVariantId && $storage, fn ($q) => $q->where('pv.storage_option_id', $storage))
+            ->when(! $productVariantId && $color, fn ($q) => $q->where('pv.color_option_id', $color));
 
+        $count      = (clone $query)->count();
         $priceStats = (clone $query)
-            ->selectRaw('MIN(selling_price) as min_price, MAX(selling_price) as max_price')
+            ->selectRaw('MIN(d.selling_price) as min_price, MAX(d.selling_price) as max_price')
             ->first();
 
         return response()->json([
             'count'     => $count,
-            'min_price' => $priceStats->min_price ? (float) $priceStats->min_price : null,
-            'max_price' => $priceStats->max_price ? (float) $priceStats->max_price : null,
+            'min_price' => $priceStats->min_price !== null ? (float) $priceStats->min_price : null,
+            'max_price' => $priceStats->max_price !== null ? (float) $priceStats->max_price : null,
         ]);
     }
 
     public function variants(Product $product)
     {
         $this->requirePermission('direct_sale.manage');
-        $rows = DB::table('devices as d')
-            ->leftJoin('ram_options as ro', 'ro.id', '=', 'd.ram_option_id')
-            ->leftJoin('storage_options as so', 'so.id', '=', 'd.storage_option_id')
-            ->leftJoin('color_options as co', 'co.id', '=', 'd.color_option_id')
-            ->where('d.product_id', $product->id)
+
+        $optionRows = DB::table('devices as d')
+            ->join('product_variants as pv', 'pv.id', '=', 'd.product_variant_id')
+            ->leftJoin('ram_options as ro', 'ro.id', '=', 'pv.ram_option_id')
+            ->leftJoin('storage_options as so', 'so.id', '=', 'pv.storage_option_id')
+            ->leftJoin('color_options as co', 'co.id', '=', 'pv.color_option_id')
+            ->where('pv.product_id', $product->id)
             ->where('d.status', 'available')
             ->whereNull('d.order_id')
             ->select([
@@ -191,9 +198,11 @@ class DirectSaleController extends Controller
             ->distinct()
             ->get();
 
-        $ram = []; $storage = []; $color = [];
+        $ram = [];
+        $storage = [];
+        $color = [];
 
-        foreach ($rows as $row) {
+        foreach ($optionRows as $row) {
             if ($row->ram_id) {
                 $ram[$row->ram_id] = ['id' => $row->ram_id, 'name' => $row->ram_name, 'value' => $row->ram_value];
             }
@@ -205,12 +214,71 @@ class DirectSaleController extends Controller
             }
         }
 
+        $variantRows = DB::table('product_variants as pv')
+            ->where('pv.product_id', $product->id)
+            ->where('pv.is_active', true)
+            ->leftJoin('ram_options as ro', 'ro.id', '=', 'pv.ram_option_id')
+            ->leftJoin('storage_options as so', 'so.id', '=', 'pv.storage_option_id')
+            ->leftJoin('color_options as co', 'co.id', '=', 'pv.color_option_id')
+            ->select([
+                'pv.id as product_variant_id',
+                'pv.ram_option_id', 'pv.storage_option_id', 'pv.color_option_id',
+                'ro.name as ram_name', 'so.name as storage_name', 'co.name as color_name',
+            ])
+            ->orderBy('ro.name')
+            ->orderBy('so.name')
+            ->orderBy('co.name')
+            ->get();
+
+        $combinations = [];
+        foreach ($variantRows as $vr) {
+            $vid = (int) $vr->product_variant_id;
+            $stock = (int) DB::table('devices')
+                ->where('product_variant_id', $vid)
+                ->whereNull('order_id')
+                ->where('status', 'available')
+                ->count();
+
+            if ($stock < 1) {
+                continue;
+            }
+
+            $priceRow = DB::table('devices')
+                ->where('product_variant_id', $vid)
+                ->whereNull('order_id')
+                ->where('status', 'available')
+                ->selectRaw('MIN(selling_price) as min_p, MAX(selling_price) as max_p')
+                ->first();
+
+            $labelParts = array_values(array_filter([
+                $vr->ram_name,
+                $vr->storage_name,
+                $vr->color_name,
+            ], fn ($x) => $x !== null && $x !== ''));
+
+            if ($labelParts === []) {
+                $labelParts = ['Placeholder / IMEI pending'];
+            }
+
+            $combinations[] = [
+                'product_variant_id' => $vid,
+                'ram_option_id'      => $vr->ram_option_id !== null ? (int) $vr->ram_option_id : null,
+                'storage_option_id'  => $vr->storage_option_id !== null ? (int) $vr->storage_option_id : null,
+                'color_option_id'    => $vr->color_option_id !== null ? (int) $vr->color_option_id : null,
+                'label'              => implode(' · ', $labelParts),
+                'stock'              => $stock,
+                'min_price'          => $priceRow && $priceRow->min_p !== null ? (float) $priceRow->min_p : null,
+                'max_price'          => $priceRow && $priceRow->max_p !== null ? (float) $priceRow->max_p : null,
+            ];
+        }
+
         return response()->json([
             'data' => [
-                'product_id' => $product->id,
-                'ram'        => array_values($ram),
-                'storage'    => array_values($storage),
-                'color'      => array_values($color),
+                'product_id'   => $product->id,
+                'ram'          => array_values($ram),
+                'storage'      => array_values($storage),
+                'color'        => array_values($color),
+                'combinations' => $combinations,
             ],
         ]);
     }
@@ -254,6 +322,7 @@ class DirectSaleController extends Controller
                 $ram_option_id = $line['ram_option_id'] ?? null;
                 $storage_option_id = $line['storage_option_id'] ?? null;
                 $color_option_id = $line['color_option_id'] ?? null;
+                $productVariantId = isset($line['product_variant_id']) ? (int) $line['product_variant_id'] : null;
 
                 $discountPrice = (float) ($line['discount_price'] ?? 0);
 
@@ -267,7 +336,7 @@ class DirectSaleController extends Controller
                         throw ValidationException::withMessages(["items.$index.product_id" => ['Product not found.']]);
                     }
 
-                    $deviceQuery = Device::query()->lockForUpdate();
+                    $deviceQuery = Device::query()->with('productVariant')->lockForUpdate();
                     $device = $deviceId
                         ? $deviceQuery->whereKey($deviceId)->first()
                         : $deviceQuery->where('imei', $imei)->first();
@@ -276,7 +345,7 @@ class DirectSaleController extends Controller
                         throw ValidationException::withMessages(["items.$index.device_id" => ['Device not found.']]);
                     }
 
-                    if ($device->product_id !== $productId) {
+                    if ((int) ($device->productVariant?->product_id) !== $productId) {
                         throw ValidationException::withMessages(["items.$index.product_id" => ['Device does not belong to the selected product.']]);
                     }
 
@@ -301,7 +370,7 @@ class DirectSaleController extends Controller
                     $discountAmount += $discountPrice;
 
                     $orderItemsToCreate[] = [
-                        'product_id' => $productId,
+                        'product_variant_id' => (int) $device->product_variant_id,
                         'quantity' => 1,
                         'device_id' => $device->id,
                         'unit_price' => $unitPrice,
@@ -312,7 +381,7 @@ class DirectSaleController extends Controller
                     ];
 
                     $devicesToUpdate[] = $device;
-                    $touchedProductIds[] = (int) $device->product_id;
+                    $touchedProductIds[] = (int) ($device->productVariant?->product_id ?? 0);
                 } else {
                     $product = Product::query()->whereKey($productId)->lockForUpdate()->first();
                     if (!$product) {
@@ -327,24 +396,36 @@ class DirectSaleController extends Controller
                         throw ValidationException::withMessages(["items.$index.quantity" => ['Quantity must be at least 1.']]);
                     }
 
+                    if ($productVariantId) {
+                        $pvRow = DB::table('product_variants')
+                            ->where('id', $productVariantId)
+                            ->where('product_id', $product->id)
+                            ->first();
+                        if (! $pvRow) {
+                            throw ValidationException::withMessages(["items.$index.product_variant_id" => ['Variant does not belong to this product.']]);
+                        }
+                    }
+
                     $deviceAllocQuery = Device::query()
                         ->select('devices.*')
-                        ->leftJoin('ram_options as ro', 'ro.id', '=', 'devices.ram_option_id')
-                        ->leftJoin('storage_options as so', 'so.id', '=', 'devices.storage_option_id')
-                        ->leftJoin('color_options as co', 'co.id', '=', 'devices.color_option_id')
-                        ->where('devices.product_id', $product->id)
+                        ->join('product_variants as pv', 'pv.id', '=', 'devices.product_variant_id')
+                        ->where('pv.product_id', $product->id)
                         ->whereNull('devices.order_id')
                         ->where('devices.status', 'available')
                         ->lockForUpdate();
 
-                    if ($ram_option_id) {
-                        $deviceAllocQuery->where('devices.ram_option_id', $ram_option_id);
-                    }
-                    if ($storage_option_id) {
-                        $deviceAllocQuery->where('devices.storage_option_id', $storage_option_id);
-                    }
-                    if ($color_option_id) {
-                        $deviceAllocQuery->where('devices.color_option_id', $color_option_id);
+                    if ($productVariantId) {
+                        $deviceAllocQuery->where('devices.product_variant_id', $productVariantId);
+                    } else {
+                        if ($ram_option_id) {
+                            $deviceAllocQuery->where('pv.ram_option_id', $ram_option_id);
+                        }
+                        if ($storage_option_id) {
+                            $deviceAllocQuery->where('pv.storage_option_id', $storage_option_id);
+                        }
+                        if ($color_option_id) {
+                            $deviceAllocQuery->where('pv.color_option_id', $color_option_id);
+                        }
                     }
 
                     $allocDevices = $deviceAllocQuery->limit($quantity)->get();
@@ -366,7 +447,7 @@ class DirectSaleController extends Controller
                         $discountAmount += $discountPrice;
 
                         $orderItemsToCreate[] = [
-                            'product_id' => $productId,
+                            'product_variant_id' => (int) $d->product_variant_id,
                             'quantity' => 1,
                             'device_id' => $d->id,
                             'unit_price' => $unitPrice,
@@ -377,10 +458,8 @@ class DirectSaleController extends Controller
                         ];
 
                         $devicesToUpdate[] = $d;
-                        $touchedProductIds[] = (int) $d->product_id;
+                        $touchedProductIds[] = (int) $productId;
                     }
-
-                    $product->decrement('stock_quantity', $quantity);
                 }
             }
 

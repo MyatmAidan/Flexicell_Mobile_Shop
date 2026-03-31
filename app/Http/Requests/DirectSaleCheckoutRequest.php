@@ -25,6 +25,7 @@ class DirectSaleCheckoutRequest extends FormRequest
             'items.*.ram_option_id' => ['nullable', 'exists:ram_options,id'],
             'items.*.storage_option_id' => ['nullable', 'exists:storage_options,id'],
             'items.*.color_option_id' => ['nullable', 'exists:color_options,id'],
+            'items.*.product_variant_id' => ['nullable', 'integer', 'exists:product_variants,id'],
 
             'customer_id' => ['required', 'integer', 'exists:customers,id'],
 

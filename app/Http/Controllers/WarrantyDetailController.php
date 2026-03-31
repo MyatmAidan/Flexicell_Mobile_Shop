@@ -22,7 +22,7 @@ class WarrantyDetailController extends Controller
             ->with([
                 'customer',
                 'device.product.phoneModel.brand',
-                'device.storageOption',
+                'device.productVariant.storageOption',
                 'warranty',
             ]);
 
@@ -38,7 +38,7 @@ class WarrantyDetailController extends Controller
 
                 return trim("$brand $model");
             })
-            ->addColumn('storage', fn (WarrantyDetail $wd) => $wd->device?->storageOption?->name ?? '-')
+            ->addColumn('storage', fn (WarrantyDetail $wd) => $wd->device?->productVariant?->storageOption?->name ?? '-')
             ->addColumn('imei', fn (WarrantyDetail $wd) => $wd->device?->imei ?? '-')
             ->addColumn('warranty_months', fn (WarrantyDetail $wd) => ($wd->warranty?->warranty_month ?? '-') . ' months')
             ->addColumn('start', fn (WarrantyDetail $wd) => $wd->start_date?->format('Y-m-d') ?? '-')

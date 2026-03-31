@@ -226,9 +226,13 @@
                 success: function(res) {
                     $('#editModal').modal('hide');
                     Swal.fire({
-                        toast: true, position: 'top-end', icon: 'success',
+                        toast: true,
+                        position: 'top-end',
+                        icon: 'success',
                         title: res.message ?? 'User updated successfully',
-                        timer: 2000, showConfirmButton: false
+                        showConfirmButton: false,
+                        timer: 2000,
+                        timerProgressBar: true,
                     });
                     setTimeout(() => location.reload(), 1500);
                 },

@@ -51,4 +51,9 @@ class Order extends Model
     {
         return $this->hasMany(Device::class);
     }
+
+    public function tradeIn()
+    {
+        return $this->hasOne(OrderTradeIn::class);
+    }
 }

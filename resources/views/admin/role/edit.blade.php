@@ -284,8 +284,9 @@ $(document).ready(function () {
                     position: 'top-end',
                     icon: 'success',
                     title: res.message,
+                    showConfirmButton: false,
                     timer: 2000,
-                    showConfirmButton: false
+                    timerProgressBar: true,
                 });
             },
             error: function (xhr) {

@@ -56,7 +56,7 @@
                 { data: 'model_name', name: 'model_name' },
                 { data: 'brand_name', name: 'brand_name' },
                 { data: 'product_type', name: 'product_type' },
-                { data: 'stock_quantity', name: 'stock_quantity' },
+                { data: 'available_devices_count', name: 'available_devices_count' },
                 { data: 'action', name: 'action', orderable: false, searchable: false },
             ],
             order: [[6, 'desc']],

@@ -262,8 +262,9 @@
                         position: 'top-end',
                         icon: 'success',
                         title: res.message,
-                        timer: 2000,
                         showConfirmButton: false,
+                        timer: 2000,
+                        timerProgressBar: true,
                     }).then(() => location.reload());
                 },
                 error: function (xhr) {

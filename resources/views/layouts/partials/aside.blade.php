@@ -106,6 +106,12 @@
                     <span class="hide-menu">Direct Sale</span>
                 </a>
             </li>
+            <li class="sidebar-item">
+                <a class="sidebar-link {{ request()->is('admin/trade-in-sale*') ? 'active' : '' }}" href="{{ route('admin.trade_in.index') }}" aria-expanded="false">
+                    <span><iconify-icon icon="solar:transfer-horizontal-bold-duotone" class="fs-6"></iconify-icon></span>
+                    <span class="hide-menu">Trade-In Sale</span>
+                </a>
+            </li>
 
             {{-- ── Catalog (dropdown) ── --}}
             <li class="nav-small-cap">

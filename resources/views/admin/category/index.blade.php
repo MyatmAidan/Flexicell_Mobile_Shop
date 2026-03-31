@@ -319,8 +319,9 @@
                             icon: 'success',
                             title: 'Success',
                             text: res.message ?? 'Category updated successfully',
+                            showConfirmButton: false,
                             timer: 2000,
-                            showConfirmButton: false
+                            timerProgressBar: true,
                         });
 
                         datatable.ajax.reload(null, false);

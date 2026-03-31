@@ -111,6 +111,24 @@
         text-shadow: 0 1px 2px rgba(0,0,0,0.5);
     }
     .color-swatch-input:checked + .color-swatch-label .check-mark { display: block; }
+
+    .variant-combo-input { position: absolute; opacity: 0; width: 0; height: 0; }
+    .variant-combo-wrap { position: relative; }
+    .variant-combo-card {
+        border: 2px solid #edeff2;
+        border-radius: 10px;
+        padding: 10px 12px;
+        cursor: pointer;
+        transition: all 0.2s;
+        background: #fff;
+    }
+    .variant-combo-input:focus-visible + .variant-combo-card { outline: 2px solid #0d6efd; }
+    .variant-combo-input:checked + .variant-combo-card {
+        border-color: #0d6efd;
+        background: #f0f7ff;
+        box-shadow: 0 2px 6px rgba(13, 110, 253, 0.12);
+    }
+    .variant-combo-meta { font-size: 0.72rem; color: #64748b; }
     
     #modalVariantImg {
         width: 100%;
@@ -125,7 +143,7 @@
 
 @section('content')
     <div class="row g-3">
-        <div class="col-12 col-lg-7">
+        <div class="col-12 col-lg-6">
             <div class="card pos-panel">
                 <div class="card-body">
                     <h5 class="mb-3">Direct Sale For All Products</h5>
@@ -158,7 +176,7 @@
             </div>
         </div>
 
-        <div class="col-12 col-lg-5">
+        <div class="col-12 col-lg-6">
             <div class="card">
                 <div class="card-body">
                     <div class="d-flex justify-content-between align-items-center mb-2">
@@ -285,6 +303,13 @@
                         <h5 class="fw-bold mb-0" id="variantProductName"></h5>
                     </div>
 
+                    <div id="variantCombinationSection" class="mb-3" style="display:none;">
+                        <label class="variant-group-label">In-stock SKU <span class="text-muted fw-normal" style="font-size:0.78rem;">(matches product_variants + devices)</span></label>
+                        <div id="variantCombinationList" class="d-flex flex-column gap-2"></div>
+                        <p class="small text-muted mt-2 mb-0" id="variantComboFootnote">Counts include placeholder units pending IMEI.</p>
+                    </div>
+
+                    <div id="variantLegacySection">
                     <div class="mb-3">
                         <label class="variant-group-label">Select RAM</label>
                         <div class="variant-tiles" id="variantRamList"></div>
@@ -300,6 +325,7 @@
                             <span>Select Color</span>
                             <span id="selectedColorName" class="fw-bold px-2 py-1 rounded" style="font-size: 0.8rem; background-color: #eee; color: #333;">Any</span>                        </label>
                         <div class="color-swatches" id="variantColorList"></div>
+                    </div>
                     </div>
 
                     <div class="row align-items-center g-3">
@@ -367,6 +393,124 @@
         let productCache = {};
         let currentView = 'grid';
         const variantModal = new bootstrap.Modal(document.getElementById('variantModal'));
+        let variantUiMode = 'legacy';
+        let variantCombinations = [];
+
+        function escapeHtml(str) {
+            if (str == null || str === '') return '';
+            const d = document.createElement('div');
+            d.textContent = str;
+            return d.innerHTML;
+        }
+
+        function renderLegacyVariantPickers(v) {
+            const renderTiles = (container, items, name) => {
+                const $c = $(container).empty();
+                $c.append(`
+                    <div class="variant-tile shadow-sm">
+                        <input type="radio" name="${name}" id="${name}_any" value="" class="variant-tile-input variant-option" checked>
+                        <label for="${name}_any" class="variant-tile-label">Any</label>
+                    </div>
+                `);
+                (items || []).forEach(x => {
+                    $c.append(`
+                        <div class="variant-tile shadow-sm">
+                            <input type="radio" name="${name}" id="${name}_${x.id}" value="${x.id}" data-label="${escapeHtml(x.name)}" data-value="${escapeHtml(x.value)}" class="variant-tile-input variant-option">
+                            <label for="${name}_${x.id}" class="variant-tile-label">${escapeHtml(x.name)}</label>
+                        </div>
+                    `);
+                });
+            };
+            const renderSwatchesLocal = (container, items) => {
+                const $c = $(container).empty();
+                $c.append(`
+                    <div class="color-swatch">
+                        <input type="radio" name="variant_color" id="color_any" value="" class="color-swatch-input variant-option" checked>
+                        <label for="color_any" class="color-swatch-label" style="background:#eee; color:#666;" title="Any">
+                            <i class="fas fa-ban fa-xs"></i>
+                        </label>
+                    </div>
+                `);
+                (items || []).forEach(x => {
+                    $c.append(`
+                        <div class="color-swatch">
+                            <input type="radio" name="variant_color" id="color_${x.id}" value="${x.id}" data-label="${escapeHtml(x.name)}" data-value="${escapeHtml(x.value)}" class="color-swatch-input variant-option">
+                            <label for="color_${x.id}" class="color-swatch-label" style="background-color: ${escapeHtml(x.value)};" title="${escapeHtml(x.name)}">
+                                <i class="fas fa-check check-mark"></i>
+                            </label>
+                        </div>
+                    `);
+                });
+            };
+            renderTiles('#variantRamList', v.ram, 'variant_ram');
+            renderTiles('#variantStorageList', v.storage, 'variant_storage');
+            renderSwatchesLocal('#variantColorList', v.color);
+        }
+
+        function renderCombinationPickers(combos) {
+            const $list = $('#variantCombinationList').empty();
+            combos.forEach((c, idx) => {
+                const id = 'vc_' + c.product_variant_id;
+                const minP = c.min_price;
+                const maxP = c.max_price;
+                let priceHint = '';
+                if (minP != null) {
+                    priceHint = (minP === maxP) ? (money(minP) + ' MMK') : (money(minP) + ' ~ ' + money(maxP) + ' MMK');
+                }
+                $list.append(
+                    '<div class="variant-combo-wrap">' +
+                    '<input type="radio" name="variant_combo_pick" id="' + id + '" class="variant-combo-input" value="' + c.product_variant_id + '"' + (idx === 0 ? ' checked' : '') + ' data-stock="' + c.stock + '">' +
+                    '<label for="' + id + '" class="variant-combo-card d-block mb-0">' +
+                    '<div class="d-flex justify-content-between align-items-start gap-2">' +
+                    '<span class="fw-semibold small">' + escapeHtml(c.label) + '</span>' +
+                    '<span class="badge bg-success flex-shrink-0">' + c.stock + ' avail.</span>' +
+                    '</div>' +
+                    (priceHint ? '<div class="variant-combo-meta mt-1">' + escapeHtml(priceHint) + '</div>' : '') +
+                    '</label></div>'
+                );
+            });
+        }
+
+        function wireVariantModalAfterLoad() {
+            $('input[name="variant_combo_pick"]').off('change.vsku').on('change.vsku', function() { checkVariantStock(); });
+            $('.variant-option').off('change.vstk').on('change.vstk', function() { checkVariantStock(); });
+        }
+
+        function openVariantModalForProduct(product) {
+            const imgUrl = product.image ? `${productImageBase}/${product.image}` : 'https://via.placeholder.com/300?text=No+Photo';
+            $('#modalVariantImg').attr('src', imgUrl);
+            $('#variantProductId').val(product.id);
+            $('#variantProductName').text(`${product.brand} - ${product.label}`);
+            $('#variantQty').val(1).removeAttr('max');
+            $('#variantPriceBox').hide();
+            $('#variantResolvedPrice').val(0);
+
+            $.get(urls.variants.replace('__id__', product.id))
+                .done(function(res) {
+                    const v = res.data || {};
+                    variantCombinations = v.combinations || [];
+                    if (variantCombinations.length > 0) {
+                        variantUiMode = 'combo';
+                        $('#variantCombinationSection').show();
+                        $('#variantLegacySection').hide();
+                        renderCombinationPickers(variantCombinations);
+                    } else {
+                        variantUiMode = 'legacy';
+                        $('#variantCombinationSection').hide();
+                        $('#variantLegacySection').show();
+                        renderLegacyVariantPickers(v);
+                    }
+                    variantModal.show();
+                    wireVariantModalAfterLoad();
+                    checkVariantStock();
+                })
+                .fail(function() {
+                    variantUiMode = 'legacy';
+                    $('#variantCombinationSection').hide();
+                    $('#variantLegacySection').show();
+                    upsertQtyProduct(product, 1);
+                });
+        }
 
         function money(n) {
             return (Number(n || 0)).toFixed(2);
@@ -405,6 +549,7 @@
                     <tr>
                         <td>
                             <div class="fw-semibold">${l.product_label}</div>
+                            ${l.variant_label ? `<div class="small text-muted">${escapeHtml(l.variant_label)}</div>` : ''}
                             ${l.device_id ? `<div class="small text-muted mono">IMEI: ${l.imei || '-'}</div>` : ''}
                         </td>
                         <td><span class="badge bg-${l.device_id ? 'info' : 'secondary'}">${l.device_id ? 'IMEI' : 'QTY'}</span></td>
@@ -584,112 +729,50 @@
                 Swal.fire({ icon: 'warning', title: 'Out of stock', text: 'This product has no stock.' });
                 return;
             }
-            
-            const imgUrl = product.image ? `${productImageBase}/${product.image}` : 'https://via.placeholder.com/300?text=No+Photo';
-            $('#modalVariantImg').attr('src', imgUrl);
-            $('#variantProductId').val(product.id);
-            $('#variantProductName').text(`${product.brand} - ${product.label}`);
-            $('#variantQty').val(1);
-            $('#variantPriceBox').hide();
-            $('#variantResolvedPrice').val(0);
-
-            // Fetch variants and populate radios
-            $.get(urls.variants.replace('__id__', product.id))
-                .done(function(res) {
-                    const v = res.data;
-                    
-                    const renderTiles = (container, items, name) => {
-                        const $c = $(container).empty();
-                        // Add "Any" option
-                        $c.append(`
-                            <div class="variant-tile shadow-sm">
-                                <input type="radio" name="${name}" id="${name}_any" value="" class="variant-tile-input variant-option" checked>
-                                <label for="${name}_any" class="variant-tile-label">Any</label>
-                            </div>
-                        `);
-                        (items || []).forEach(x => {
-                            $c.append(`
-                                <div class="variant-tile shadow-sm">
-                                    <input type="radio" name="${name}" id="${name}_${x.id}" value="${x.id}" data-label="${x.name}" class="variant-tile-input variant-option">
-                                    <label for="${name}_${x.id}" class="variant-tile-label">${x.name}</label>
-                                </div>
-                            `);
-                        });
-                    };
-
-                    const renderSwatches = (container, items) => {
-                        const $c = $(container).empty();
-                        $c.append(`
-                            <div class="color-swatch">
-                                <input type="radio" name="variant_color" id="color_any" value="" class="color-swatch-input variant-option" checked>
-                                <label for="color_any" class="color-swatch-label" style="background:#eee; color:#666;" title="Any">
-                                    <i class="fas fa-ban fa-xs"></i>
-                                </label>
-                            </div>
-                        `);
-                        (items || []).forEach(x => {
-                            $c.append(`
-                                <div class="color-swatch">
-                                    <input type="radio" name="variant_color" id="color_${x.id}" value="${x.id}" data-label="${x.name}" class="color-swatch-input variant-option">
-                                    <label for="color_${x.id}" class="color-swatch-label" style="background-color: ${x.value};" title="${x.name}">
-                                        <i class="fas fa-check check-mark"></i>
-                                    </label>
-                                </div>
-                            `);
-                        });
-                    };
-
-                    renderTiles('#variantRamList', v.ram, 'variant_ram');
-                    renderTiles('#variantStorageList', v.storage, 'variant_storage');
-                    renderSwatches('#variantColorList', v.color);
-
-                    variantModal.show();
-                    checkVariantStock(); 
-
-                    // Attach change listener to new radios
-                    $('.variant-option').on('change', function() {
-                        checkVariantStock();
-                    });
-                })
-                .fail(function() {
-                    upsertQtyProduct(product, 1);
-                });
-        });
-
-        // Dynamic stock check in modal
-        $('.variant-option').on('change', function() {
-            checkVariantStock();
+            openVariantModalForProduct(product);
         });
 
         function checkVariantStock() {
             const productId = $('#variantProductId').val();
-            const ram = $('input[name="variant_ram"]:checked').val();
-            const storage = $('input[name="variant_storage"]:checked').val();
-            const color = $('input[name="variant_color"]:checked').val();
-            const colorName = $('input[name="variant_color"]:checked').data('label') || 'Any';
-            const allSelected = ram && storage && color;
+            if (!productId) return;
 
-            $('#selectedColorName').text(colorName);
             $('#variantStockDisplay').html('<span class="spinner-border spinner-border-sm text-secondary"></span>');
             $('#variantAddBtn').prop('disabled', true);
 
-            if (!allSelected) {
-                $('#variantPriceBox').hide();
-                $('#variantResolvedPrice').val(0);
+            let stockParams = { product_id: productId };
+            if (variantUiMode === 'combo') {
+                const $pick = $('input[name="variant_combo_pick"]:checked');
+                if (!$pick.length) {
+                    $('#variantStockDisplay').html('<span class="text-muted">—</span>');
+                    return;
+                }
+                stockParams.product_variant_id = $pick.val();
+            } else {
+                stockParams.ram = $('input[name="variant_ram"]:checked').val();
+                stockParams.storage = $('input[name="variant_storage"]:checked').val();
+                stockParams.color = $('input[name="variant_color"]:checked').val();
+                const colorName = $('input[name="variant_color"]:checked').data('label') || 'Any';
+                $('#selectedColorName').text(colorName);
             }
 
-            $.get(urls.variants_stock, { product_id: productId, ram, storage, color })
+            $.get(urls.variants_stock, stockParams)
                 .done(function(res) {
                     const count = res.count || 0;
                     if (count > 0) {
                         $('#variantStockDisplay').html(`<span class="text-success">${count} Available</span>`);
-                        $('#variantAddBtn').prop('disabled', !allSelected);
+                        $('#variantAddBtn').prop('disabled', false);
+                        if (variantUiMode === 'combo') {
+                            $('#variantQty').attr('max', count);
+                        }
                     } else {
                         $('#variantStockDisplay').html('<span class="text-danger">Out of Stock</span>');
                         $('#variantAddBtn').prop('disabled', true);
+                        if (variantUiMode === 'combo') {
+                            $('#variantQty').removeAttr('max');
+                        }
                     }
 
-                    if (allSelected && res.min_price !== null) {
+                    if (res.min_price !== null) {
                         if (res.min_price === res.max_price) {
                             $('#variantPriceDisplay').text(money(res.min_price) + ' MMK');
                         } else {
@@ -697,7 +780,7 @@
                         }
                         $('#variantResolvedPrice').val(res.min_price);
                         $('#variantPriceBox').slideDown(200);
-                    } else if (allSelected) {
+                    } else {
                         const product = productCache[Number(productId)];
                         const fallback = product ? product.selling_price : 0;
                         $('#variantPriceDisplay').text(money(fallback) + ' MMK');
@@ -874,6 +957,7 @@
                 formData.append(`items[${i}][unit_price]`, Number(l.unit_price));
                 formData.append(`items[${i}][discount_price]`, Number(l.discount_price || 0));
                 if (!l.device_id) {
+                    if (l.product_variant_id) formData.append(`items[${i}][product_variant_id]`, l.product_variant_id);
                     if (l.ram_option_id) formData.append(`items[${i}][ram_option_id]`, l.ram_option_id);
                     if (l.storage_option_id) formData.append(`items[${i}][storage_option_id]`, l.storage_option_id);
                     if (l.color_option_id) formData.append(`items[${i}][color_option_id]`, l.color_option_id);
@@ -904,7 +988,19 @@
                 data: formData,
                 success: function(res) {
                     if (res.data?.receipt_url) {
-                        window.location.href = res.data.receipt_url + '?print=1';
+                        const base = res.data.receipt_url;
+                        const receiptUrl = base + (base.indexOf('?') >= 0 ? '&' : '?') + 'print=1';
+                        Swal.fire({
+                            toast: true,
+                            position: 'top-end',
+                            icon: 'success',
+                            title: 'Sale complete — opening receipt…',
+                            showConfirmButton: false,
+                            timer: 1400,
+                            timerProgressBar: true,
+                        }).then(function() {
+                            window.location.href = receiptUrl;
+                        });
                         return;
                     }
                     window.location.href = "{{ route('admin.direct_sale.index') }}";
@@ -976,43 +1072,7 @@
                     Swal.fire({ toast: true, position: 'top-end', icon: 'warning', title: 'Out of stock', timer: 1500, showConfirmButton: false });
                     return;
                 }
-
-                // Open variant modal (same as clicking Add)
-                const imgUrl = product.image ? `${productImageBase}/${product.image}` : 'https://via.placeholder.com/300?text=No+Photo';
-                $('#modalVariantImg').attr('src', imgUrl);
-                $('#variantProductId').val(product.id);
-                $('#variantProductName').text(`${product.brand} - ${product.label}`);
-                $('#variantQty').val(1);
-                $('#variantPriceBox').hide();
-                $('#variantResolvedPrice').val(0);
-
-                $.get(urls.variants.replace('__id__', product.id))
-                    .done(function(res) {
-                        const v = res.data;
-                        const renderTiles = (container, items, name) => {
-                            const $c = $(container).empty();
-                            $c.append(`<div class="variant-tile shadow-sm"><input type="radio" name="${name}" id="${name}_any" value="" class="variant-tile-input variant-option" checked><label for="${name}_any" class="variant-tile-label">Any</label></div>`);
-                            (items || []).forEach(x => {
-                                $c.append(`<div class="variant-tile shadow-sm"><input type="radio" name="${name}" id="${name}_${x.id}" value="${x.id}" data-label="${x.name}" class="variant-tile-input variant-option"><label for="${name}_${x.id}" class="variant-tile-label">${x.name}</label></div>`);
-                            });
-                        };
-                        const renderSwatchesLocal = (container, items) => {
-                            const $c = $(container).empty();
-                            $c.append(`<div class="color-swatch"><input type="radio" name="variant_color" id="color_any" value="" class="color-swatch-input variant-option" checked><label for="color_any" class="color-swatch-label" style="background:#eee; color:#666;" title="Any"><i class="fas fa-ban fa-xs"></i></label></div>`);
-                            (items || []).forEach(x => {
-                                $c.append(`<div class="color-swatch"><input type="radio" name="variant_color" id="color_${x.id}" value="${x.id}" data-label="${x.name}" class="color-swatch-input variant-option"><label for="color_${x.id}" class="color-swatch-label" style="background-color: ${x.value};" title="${x.name}"><i class="fas fa-check check-mark"></i></label></div>`);
-                            });
-                        };
-                        renderTiles('#variantRamList', v.ram, 'variant_ram');
-                        renderTiles('#variantStorageList', v.storage, 'variant_storage');
-                        renderSwatchesLocal('#variantColorList', v.color);
-                        variantModal.show();
-                        checkVariantStock();
-                        $('.variant-option').on('change', function() { checkVariantStock(); });
-                    })
-                    .fail(function() {
-                        upsertQtyProduct(product, 1);
-                    });
+                openVariantModalForProduct(product);
             });
         }
 
@@ -1026,45 +1086,76 @@
             const productId = Number($('#variantProductId').val());
             const product = productCache[productId];
             if (!product) return;
-            const qty = Math.max(1, Number($('#variantQty').val() || 1));
-            
-            const ram_id = $('input[name="variant_ram"]:checked').val() || null;
-            const ram_val = $('input[name="variant_ram"]:checked').data('label');
-            
-            const storage_id = $('input[name="variant_storage"]:checked').val() || null;
-            const storage_val = $('input[name="variant_storage"]:checked').data('label');
-            
-            const color_id = $('input[name="variant_color"]:checked').val() || null;
-            const color_val = $('input[name="variant_color"]:checked').data('label');
-
+            let qty = Math.max(1, Number($('#variantQty').val() || 1));
             const resolvedPrice = Number($('#variantResolvedPrice').val() || 0);
             const unitPrice = resolvedPrice > 0 ? resolvedPrice : Number(product.selling_price || 0);
 
-            const key = `p-${product.id}-${ram_id || 'any'}-${storage_id || 'any'}-${color_id || 'any'}`;
-            const existing = cart.find(x => x.key === key);
-
-            const optionsLabel = [
-                ram_id ? ram_val : null,
-                storage_id ? storage_val : null,
-                color_id ? color_val : null
-            ].filter(Boolean).join('/');
-            
-            const labelSuffix = optionsLabel ? ` (${optionsLabel})` : '';
-
-            if (existing) {
-                existing.quantity += qty;
+            if (variantUiMode === 'combo') {
+                const $pick = $('input[name="variant_combo_pick"]:checked');
+                if (!$pick.length) return;
+                const pvid = Number($pick.val());
+                const combo = (variantCombinations || []).find(c => Number(c.product_variant_id) === pvid);
+                if (!combo) return;
+                const maxStock = parseInt($pick.data('stock'), 10) || 0;
+                if (qty > maxStock) {
+                    qty = maxStock;
+                    $('#variantQty').val(qty);
+                }
+                if (qty < 1) {
+                    Swal.fire({ icon: 'warning', title: 'No stock', text: 'Select a SKU with available quantity.' });
+                    return;
+                }
+                const key = `pv-${product.id}-${pvid}`;
+                const existing = cart.find(x => x.key === key);
+                const labelSuffix = ` (${combo.label})`;
+                if (existing) {
+                    const nextQty = existing.quantity + qty;
+                    existing.quantity = nextQty > maxStock ? maxStock : nextQty;
+                } else {
+                    cart.push({
+                        key,
+                        product_id: product.id,
+                        product_label: product.label,
+                        variant_label: combo.label,
+                        product_type: product.product_type,
+                        unit_price: unitPrice,
+                        discount_price: 0,
+                        quantity: qty,
+                        product_variant_id: pvid,
+                        ram_option_id: combo.ram_option_id || null,
+                        storage_option_id: combo.storage_option_id || null,
+                        color_option_id: combo.color_option_id || null,
+                    });
+                }
             } else {
-                cart.push({
-                    key,
-                    product_id: product.id,
-                    product_label: product.label + labelSuffix,
-                    unit_price: unitPrice,
-                    discount_price: 0,
-                    quantity: qty,
-                    ram_option_id: ram_id,
-                    storage_option_id: storage_id,
-                    color_option_id: color_id,
-                });
+                const ram_id = $('input[name="variant_ram"]:checked').val() || null;
+                const ram_val = $('input[name="variant_ram"]:checked').data('label');
+                const storage_id = $('input[name="variant_storage"]:checked').val() || null;
+                const storage_val = $('input[name="variant_storage"]:checked').data('label');
+                const color_id = $('input[name="variant_color"]:checked').val() || null;
+                const color_val = $('input[name="variant_color"]:checked').data('label');
+                const key = `p-${product.id}-${ram_id || 'any'}-${storage_id || 'any'}-${color_id || 'any'}`;
+                const existing = cart.find(x => x.key === key);
+                const optionsLabel = [ram_id ? ram_val : null, storage_id ? storage_val : null, color_id ? color_val : null].filter(Boolean).join(' / ');
+                const labelSuffix = optionsLabel ? ` (${optionsLabel})` : '';
+                if (existing) {
+                    existing.quantity += qty;
+                } else {
+                    cart.push({
+                        key,
+                        product_id: product.id,
+                        product_label: product.label + labelSuffix,
+                        variant_label: optionsLabel || null,
+                        product_type: product.product_type,
+                        unit_price: unitPrice,
+                        discount_price: 0,
+                        quantity: qty,
+                        product_variant_id: null,
+                        ram_option_id: ram_id,
+                        storage_option_id: storage_id,
+                        color_option_id: color_id,
+                    });
+                }
             }
             variantModal.hide();
             renderCart();

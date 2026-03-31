@@ -11,7 +11,6 @@ use App\Models\Payment;
 use App\Models\InstallmentPayment;
 use App\Models\Device;
 use Carbon\Carbon;
-use Illuminate\Http\Request;
 
 class DashboardController extends Controller
 {
@@ -26,7 +25,7 @@ class DashboardController extends Controller
         $totalRevenue = Order::sum('grand_total');
         $revenueThisMonth = Order::where('created_at', '>=', $startOfMonth)->sum('grand_total');
         $revenueLastMonth = Order::whereBetween('created_at', [$startOfLastMonth, $endOfLastMonth])->sum('grand_total');
-        
+
         $revenueGrowth = 0;
         if ($revenueLastMonth > 0) {
             $revenueGrowth = (($revenueThisMonth - $revenueLastMonth) / $revenueLastMonth) * 100;
@@ -37,10 +36,10 @@ class DashboardController extends Controller
         // Available Devices
         $totalDevices = Device::where('status', 'available')->whereNull('order_id')->count();
         $newDevices = Device::where('status', 'available')->whereNull('order_id')
-            ->whereHas('product', fn($q) => $q->where('product_type', 'new'))
+            ->whereHas('productVariant.product', fn ($q) => $q->where('product_type', 'new'))
             ->count();
         $secondHandDevices = Device::where('status', 'available')->whereNull('order_id')
-            ->whereHas('product', fn($q) => $q->where('product_type', 'second hand'))
+            ->whereHas('productVariant.product', fn ($q) => $q->where('product_type', 'second hand'))
             ->count();
 
         // Orders
@@ -61,16 +60,24 @@ class DashboardController extends Controller
             ->where('created_at', '>=', $startOfMonth)
             ->count();
 
-        // Products
+        // Products — stock is device-level (available units per product)
         $totalProducts = Product::count();
-        $activeProducts = Product::where('stock_quantity', '>', 0)->count();
-        $lowStockProducts = Product::where('stock_quantity', '>', 0)->where('stock_quantity', '<=', 5)->count();
-        $outOfStockProducts = Product::where('stock_quantity', 0)->count();
+        $activeProducts = Product::whereHas('devices', function ($q) {
+            $q->where('status', 'available')->whereNull('order_id');
+        })->count();
+        $lowStockProducts = Product::withCount([
+            'devices as available_device_count' => function ($q) {
+                $q->where('status', 'available')->whereNull('order_id');
+            },
+        ])->havingBetween('available_device_count', [1, 5])->count();
+        $outOfStockProducts = Product::whereDoesntHave('devices', function ($q) {
+            $q->where('status', 'available')->whereNull('order_id');
+        })->count();
 
         // System Overview
         $totalCategories = Category::count();
         $totalBrands = Brands::count();
-        $totalPaymentMethods = 2; // Default, placeholder if PaymentMethod doesn't exist
+        $totalPaymentMethods = 2;
 
         // Payments
         $completedPayments = Payment::whereIn('status', ['paid', 'completed'])->sum('amount') ?? 0;
@@ -85,11 +92,14 @@ class DashboardController extends Controller
         // Recent Orders
         $recentOrders = Order::with('user')->orderBy('created_at', 'desc')->take(5)->get();
 
-        // Top Products
-        // For simplicity, we can fetch products with the most stock or add a simple relation if order_items logic is tricky
+        // Top Products by available inventory
         $topProducts = Product::with(['phoneModel.brand', 'phoneModel.category'])
-            ->withCount('devices') // Assuming devices mean orders/sales in this structure or we could just use stock for now
-            ->orderBy('devices_count', 'desc')
+            ->withCount([
+                'devices as available_device_count' => function ($q) {
+                    $q->where('status', 'available')->whereNull('order_id');
+                },
+            ])
+            ->orderByDesc('available_device_count')
             ->take(5)
             ->get();
 

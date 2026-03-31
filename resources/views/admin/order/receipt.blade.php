@@ -108,6 +108,9 @@
     <div class="no-print btn-group">
         <button onclick="window.print()" class="btn">PRINT</button>
         <a href="{{ route('admin.direct_sale.index') }}" class="btn">NEW SALE</a>
+        @if($order->tradeIn)
+        <a href="{{ route('admin.trade_in.index') }}" class="btn">TRADE-IN SALE</a>
+        @endif
         <a href="{{ route('admin.order.show', $order->id) }}" class="btn">ORDER DETAILS</a>
     </div>
 
@@ -147,12 +150,39 @@
 
         <div class="dashed-line"></div>
 
+        @if($order->tradeIn && $order->tradeIn->secondPhonePurchase)
+            @php $pur = $order->tradeIn->secondPhonePurchase; @endphp
+            <div class="fw-bold text-center" style="margin: 8px 0 4px;">TRADE-IN</div>
+            <div class="info-row">
+                <span>Model</span>
+                <span class="text-right">{{ $pur->phoneModel?->brand?->brand_name }} {{ $pur->phoneModel?->model_name }}</span>
+            </div>
+            <div class="info-row">
+                <span>IMEI</span>
+                <span class="text-right">{{ $pur->imei }}</span>
+            </div>
+            <div class="info-row">
+                <span>Condition / Battery</span>
+                <span class="text-right">{{ $pur->condition_grade }} / {{ $pur->battery_percentage }}%</span>
+            </div>
+            @php
+                $tiSpecs = collect([$pur->ramOption?->name, $pur->storageOption?->name, $pur->colorOption?->name])->filter()->implode(' / ');
+            @endphp
+            @if($tiSpecs !== '')
+            <div class="info-row">
+                <span>Specs</span>
+                <span class="text-right">{{ $tiSpecs }}</span>
+            </div>
+            @endif
+            <div class="dashed-line"></div>
+        @endif
+
         <!-- Items -->
         <table class="items-table">
             @foreach ($order->items as $item)
             <tr>
                 <td colspan="2">
-                    # {{ $item->product_id }} &nbsp; 
+                    #{{ $item->product?->id ?? $item->product_variant_id }} &nbsp;
                     {{ $item->product?->phoneModel?->model_name ?? 'Product' }}
                     @if($item->device?->imei)
                         <br>&nbsp;&nbsp;IMEI: {{ $item->device->imei }}
@@ -175,6 +205,12 @@
             <div class="info-row">
                 <span style="margin-left: 20%;">Discount</span>
                 <span>-MMK {{ number_format((float)($order->discount_amount ?? 0), 2) }}</span>
+            </div>
+            @endif
+            @if($order->tradeIn)
+            <div class="info-row">
+                <span style="margin-left: 20%;">Trade-In credit</span>
+                <span>-MMK {{ number_format((float) $order->tradeIn->trade_in_credit, 2) }}</span>
             </div>
             @endif
             <div class="info-row">

@@ -2,6 +2,8 @@
 
 namespace App\Providers;
 
+use App\Models\Device;
+use App\Observers\DeviceObserver;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\Facades\View;
@@ -22,6 +24,8 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        Device::observe(DeviceObserver::class);
+
         // Share the authenticated user to all views for permission checks
         View::composer('*', function ($view) {
             $view->with('authUser', Auth::user());
