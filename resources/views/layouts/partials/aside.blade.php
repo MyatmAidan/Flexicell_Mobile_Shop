@@ -50,7 +50,6 @@
             margin-top: -2px;
         }
 
-        /* Smooth dropdown animation */
         .left-sidebar .sidebar-nav .first-level.collapse {
             display: block !important;
             overflow: hidden;
@@ -165,23 +164,11 @@
                 <i class="ti ti-dots nav-small-cap-icon fs-6"></i>
                 <span class="hide-menu">Sales & Finance</span>
             </li>
-            <li class="sidebar-item {{ request()->is('admin/order*') || request()->is('admin/trade-in*') ? 'selected' : '' }}">
-                <a class="sidebar-link has-arrow {{ request()->is('admin/order*') || request()->is('admin/trade-in*') ? 'active' : '' }}" href="javascript:void(0)" aria-expanded="false">
+            <li class="sidebar-item">
+                <a class="sidebar-link {{ request()->is('admin/order*') ? 'active' : '' }}" href="{{ route('admin.order.index') }}">
                     <span><iconify-icon icon="solar:cart-large-minimalistic-bold-duotone" class="fs-6"></iconify-icon></span>
-                    <span class="hide-menu">Orders</span>
+                    <span class="hide-menu">Order List</span>
                 </a>
-                <ul aria-expanded="false" class="collapse first-level {{ request()->is('admin/order*') || request()->is('admin/trade-in*') ? 'in' : '' }}">
-                    <li class="sidebar-item">
-                        <a class="sidebar-link {{ request()->is('admin/order*') ? 'active' : '' }}" href="{{ route('admin.order.index') }}">
-                            <span class="hide-menu">Order List</span>
-                        </a>
-                    </li>
-                    <li class="sidebar-item">
-                        <a class="sidebar-link {{ request()->is('admin/trade-in*') ? 'active' : '' }}" href="#">
-                            <span class="hide-menu">Trade In</span>
-                        </a>
-                    </li>
-                </ul>
             </li>
             <li class="sidebar-item {{ request()->is('admin/installment*') || request()->is('admin/warranty-detail*') ? 'selected' : '' }}">
                 <a class="sidebar-link has-arrow {{ request()->is('admin/installment*') || request()->is('admin/warranty-detail*') ? 'active' : '' }}" href="javascript:void(0)" aria-expanded="false">
